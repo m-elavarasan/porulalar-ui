@@ -1,0 +1,6 @@
+{
+  "name": "Personal Wealth Portfolio",
+  "description": "A smart personal wealth management platform to track expenses, income, loans, chits, assets, and investments with Google Calendar reminders and Gmail transaction sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
