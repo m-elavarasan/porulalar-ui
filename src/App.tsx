@@ -500,6 +500,47 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Global mouse position tracker for hover glowing borders & 3D Tilt (CRED style)
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('.rounded-2xl, .rounded-3xl, .glow-card');
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        (target as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
+        (target as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
+
+        // Apply 3D tilt coordinates based on mouse hover position
+        const xc = rect.width / 2;
+        const yc = rect.height / 2;
+        const tiltX = ((yc - y) / yc) * 7;
+        const tiltY = ((x - xc) / xc) * 7;
+
+        (target as HTMLElement).style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
+        (target as HTMLElement).style.boxShadow = '0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 30px rgba(139, 92, 246, 0.15)';
+        (target as HTMLElement).style.zIndex = '10';
+      }
+    };
+
+    const handleGlobalMouseOut = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('.rounded-2xl, .rounded-3xl, .glow-card');
+      if (target && !target.contains(e.relatedTarget as Node)) {
+        (target as HTMLElement).style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        (target as HTMLElement).style.boxShadow = '';
+        (target as HTMLElement).style.zIndex = '';
+      }
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseout', handleGlobalMouseOut);
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseout', handleGlobalMouseOut);
+    };
+  }, []);
+
   // Notifications calculation
   const getNotifications = () => {
     const list: Array<{
@@ -642,26 +683,26 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans" id="main-app">
+    <div className="min-h-screen bg-[#070a13] text-slate-100 flex flex-col font-sans selection:bg-violet-500/30 selection:text-violet-200" id="main-app">
       {/* Top Banner Message */}
       {schedulerMessage && (
-        <div className="bg-emerald-600 text-white py-3 px-6 text-center text-sm font-semibold flex items-center justify-center gap-2 shadow-md animate-bounce">
+        <div className="bg-emerald-650 text-white py-3 px-6 text-center text-sm font-semibold flex items-center justify-center gap-2 shadow-md animate-bounce">
           <ShieldCheck className="h-5 w-5 shrink-0" />
           {schedulerMessage}
         </div>
       )}
 
       {/* Primary Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-150/50 shadow-premium py-3 md:py-4 px-4 md:px-6 sticky top-0 z-45 transition-all">
+      <header className="bg-slate-950/60 backdrop-blur-xl border-b border-slate-900 shadow-premium py-3 md:py-4 px-4 md:px-6 sticky top-0 z-45 transition-all">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center justify-between">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 md:h-10 md:w-10 bg-gradient-to-tr from-indigo-50 to-violet-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-150/50 shadow-2xs transition-all hover:scale-105">
-                <Wallet className="h-5 w-5 md:h-5.5 md:w-5.5 text-indigo-500" />
+              <div className="h-9 w-9 md:h-10 md:w-10 bg-gradient-to-tr from-violet-500/10 to-cyan-500/10 text-violet-400 rounded-xl flex items-center justify-center border border-violet-500/20 shadow-glow transition-all hover:scale-110 duration-300">
+                <Wallet className="h-5 w-5 md:h-5.5 md:w-5.5 text-violet-400 animate-pulse" />
               </div>
               <div>
-                <h1 className="text-sm md:text-lg font-black text-slate-800 tracking-tight leading-tight">Personal Wealth</h1>
-                <span className="text-[10px] md:text-xs text-slate-400 font-mono tracking-wider">UID: {user?.uid.substring(0, 8)}...</span>
+                <h1 className="text-sm md:text-lg font-black tracking-tight leading-tight bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">Porulalar</h1>
+                <span className="text-[9px] text-slate-500 font-mono tracking-widest block">SUPERVISOR • {user?.uid.substring(0, 8).toUpperCase()}</span>
               </div>
             </div>
 
@@ -693,14 +734,14 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
           {/* GLOBAL SEARCH BAR */}
           <div className="relative flex-1 max-w-md w-full" id="global-search-container">
             <div className="relative">
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-500" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search transactions, investments, loans..."
-                className="w-full bg-slate-50/50 border border-slate-200/80 rounded-xl pl-10 pr-10 py-2 text-xs focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400 font-medium shadow-2xs focus:shadow-xs"
+                placeholder="Search ledger, assets, goals..."
+                className="w-full bg-slate-950/40 border border-slate-800 rounded-xl pl-10 pr-10 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:bg-slate-950 focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/10 transition-all shadow-2xs font-medium"
               />
               {searchQuery && (
                 <button
@@ -721,7 +762,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                   onClick={() => setIsSearchFocused(false)} 
                 />
                 
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-slate-100 shadow-xl max-h-[420px] overflow-y-auto z-50 p-4 space-y-4 text-left">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800 shadow-premium max-h-[420px] overflow-y-auto z-50 p-4 space-y-4 text-left">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
                       Search Results ({totalResultsCount})
@@ -757,7 +798,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                                 className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
                               >
                                 <div>
-                                  <div className="text-xs font-bold text-slate-700">{e.description || e.category}</div>
+                                  <div className="text-xs font-bold text-slate-200">{e.description || e.category}</div>
                                   <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                                     <span className="font-semibold text-rose-500">{e.category}</span>
                                     <span>• {e.date}</span>
@@ -786,7 +827,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                                 className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
                               >
                                 <div>
-                                  <div className="text-xs font-bold text-slate-700">{i.description || i.source}</div>
+                                  <div className="text-xs font-bold text-slate-200">{i.description || i.source}</div>
                                   <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                                     <span className="font-semibold text-emerald-500">{i.source}</span>
                                     <span>• {i.date}</span>
@@ -809,33 +850,33 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
             {/* Notification Bell */}
             <button
               onClick={() => setIsNotificationsOpen(true)}
-              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-100 bg-white shadow-3xs cursor-pointer transition-all relative"
+              className="p-2 text-slate-400 hover:text-violet-400 hover:bg-slate-900/60 rounded-xl border border-slate-800 bg-slate-950/40 shadow-3xs cursor-pointer transition-all relative"
               title="Alerts & Notifications"
             >
               <Bell className="h-4.5 w-4.5" />
               {alertCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
                   {alertCount}
                 </span>
               )}
             </button>
 
             {/* Profile */}
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 py-1.5 px-3 rounded-xl select-none">
+            <div className="flex items-center gap-2 bg-slate-950/50 border border-slate-800 py-1.5 px-3 rounded-xl select-none">
               {user?.photoURL ? (
-                <img src={user.photoURL} alt="avatar" className="h-6 w-6 rounded-full" />
+                <img src={user.photoURL} alt="avatar" className="h-5 w-5 rounded-full" />
               ) : (
-                <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-semibold">
+                <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-violet-650 to-cyan-500 text-white flex items-center justify-center text-[10px] font-black shadow-2xs">
                   {user?.username?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
-              <span className="text-xs font-semibold text-slate-700 truncate max-w-[120px]">{user?.username || 'Active User'}</span>
+              <span className="text-xs font-bold text-slate-300 truncate max-w-[120px]">{user?.username || 'Active User'}</span>
             </div>
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-100 bg-white shadow-3xs cursor-pointer transition-colors"
+              className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 rounded-xl border border-slate-800 bg-slate-950/40 shadow-3xs cursor-pointer transition-all"
               title="Sign Out"
             >
               <LogOut className="h-4.5 w-4.5" />
@@ -887,7 +928,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
             return groups.map((g, idx) => (
               <React.Fragment key={idx}>
                 {g.title && (
-                  <span className="hidden lg:block text-[9px] font-black text-slate-400 uppercase tracking-widest pl-3 mt-4 mb-1">
+                  <span className="hidden lg:block text-[9px] font-extrabold text-slate-655 uppercase tracking-widest pl-4 mt-5 mb-1.5">
                     {g.title}
                   </span>
                 )}
@@ -900,12 +941,12 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                       onClick={() => handleTabClick(tab.id)}
                       className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer shrink-0 border lg:w-full lg:justify-between lg:py-2.5 lg:px-4 lg:rounded-xl hover:-translate-y-[1px] active:translate-y-0 ${
                         isActive
-                          ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-premium shadow-indigo-500/20 border-indigo-600'
-                          : 'bg-white/80 border-slate-150/40 text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-xs'
+                          ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-premium shadow-violet-500/25 border-violet-600'
+                          : 'bg-slate-950/30 border-slate-900/60 text-slate-400 hover:bg-slate-900/60 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <IconComp className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
+                        <IconComp className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-115 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                         <span>{tab.label}</span>
                       </div>
                       <ChevronRight className={`hidden lg:block h-3.5 w-3.5 opacity-50 transition-transform ${isActive ? 'rotate-90 opacity-100' : ''}`} />
@@ -926,15 +967,15 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
       {/* Notifications Drawer */}
       {isNotificationsOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setIsNotificationsOpen(false)} />
-          <div className="relative bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                <Bell className="h-5 w-5 text-indigo-500 animate-pulse" /> Notification Center
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs" onClick={() => setIsNotificationsOpen(false)} />
+          <div className="relative bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 w-full max-w-md h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/50">
+              <h3 className="font-bold text-slate-100 text-base flex items-center gap-2">
+                <Bell className="h-5 w-5 text-violet-400 animate-pulse" /> Notification Center
               </h3>
               <button
                 onClick={() => setIsNotificationsOpen(false)}
-                className="p-1.5 hover:bg-slate-200 rounded-xl text-slate-500 cursor-pointer transition-colors"
+                className="p-1.5 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
               >
                 <X className="h-4.5 w-4.5" />
               </button>
@@ -942,8 +983,8 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
             
             <div className="p-5 flex-1 overflow-y-auto space-y-4">
               {notifications.length === 0 ? (
-                <div className="py-12 text-center text-slate-400">
-                  <BellOff className="h-10 w-10 mx-auto text-slate-300 mb-2" />
+                <div className="py-12 text-center text-slate-500">
+                  <BellOff className="h-10 w-10 mx-auto text-slate-600 mb-2" />
                   <p className="text-xs font-semibold">No notifications</p>
                 </div>
               ) : (
@@ -952,23 +993,23 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                   return (
                     <div
                       key={n.id}
-                      className={`p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 shadow-3xs hover:shadow-xs transition-shadow ${
+                      className={`p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 shadow-premium transition-all ${
                         n.severity === 'urgent'
-                          ? 'border-rose-100 bg-rose-50/20 text-rose-800'
+                          ? 'border-rose-950/65 bg-rose-950/20 text-rose-250'
                           : n.severity === 'warning'
-                          ? 'border-amber-100 bg-amber-50/20 text-amber-800'
-                          : 'border-indigo-100 bg-indigo-50/20 text-indigo-800'
+                          ? 'border-amber-950/65 bg-amber-950/20 text-amber-250'
+                          : 'border-violet-950/65 bg-violet-950/20 text-violet-250'
                       }`}
                     >
                       <div className={`h-6 w-6 rounded-full shrink-0 flex items-center justify-center ${
-                        n.severity === 'urgent' ? 'bg-rose-100 text-rose-600' : n.severity === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'
+                        n.severity === 'urgent' ? 'bg-rose-900/40 text-rose-400' : n.severity === 'warning' ? 'bg-amber-900/40 text-amber-400' : 'bg-violet-900/40 text-violet-400'
                       }`}>
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="font-extrabold text-slate-800 block">{n.title}</span>
-                        <p className="text-slate-600 font-medium">{n.description}</p>
-                        <span className="text-[9px] text-slate-400 font-semibold block pt-1">Due: {n.date}</span>
+                        <span className="font-extrabold text-slate-200 block">{n.title}</span>
+                        <p className="text-slate-400 font-medium">{n.description}</p>
+                        <span className="text-[9px] text-slate-500 font-semibold block pt-1">Due: {n.date}</span>
                       </div>
                     </div>
                   );
@@ -1008,10 +1049,10 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
 
         <button
           onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
-          className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-2xl border transition-all cursor-pointer transform hover:scale-105 active:scale-95 ${
+          className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-premium border transition-all cursor-pointer transform hover:scale-105 active:scale-95 ${
             isQuickActionOpen 
-              ? 'bg-slate-800 hover:bg-slate-900 border-slate-700 rotate-45' 
-              : 'bg-indigo-600 hover:bg-indigo-700 border-indigo-500'
+              ? 'bg-slate-900 hover:bg-slate-950 border-slate-800 rotate-45' 
+              : 'bg-gradient-to-tr from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 border-violet-500/30 shadow-glow'
           }`}
           title="Quick Action Ledger"
         >
@@ -1021,27 +1062,27 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
 
       {/* Rapid Add Modal */}
       {activeQuickForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in" id="quick-action-modal">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-955/65 backdrop-blur-xs animate-fade-in" id="quick-action-modal">
+          <div className="bg-slate-900 rounded-3xl border border-slate-800/80 shadow-premium max-w-lg w-full overflow-hidden animate-scale-in">
+            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between bg-slate-955/40">
               <div className="flex items-center gap-2">
                 <div className={`h-9 w-9 rounded-xl flex items-center justify-center border ${
                   activeQuickForm === 'expense' 
-                    ? 'bg-rose-50 border-rose-100 text-rose-600' 
+                    ? 'bg-rose-950/20 border-rose-900/50 text-rose-400' 
                     : activeQuickForm === 'income' 
-                    ? 'bg-emerald-50 border-emerald-100 text-emerald-600' 
-                    : 'bg-indigo-50 border-indigo-100 text-indigo-600'
+                    ? 'bg-emerald-950/20 border-emerald-900/50 text-emerald-400' 
+                    : 'bg-violet-950/20 border-violet-900/50 text-violet-400'
                 }`}>
                   {activeQuickForm === 'expense' ? <Receipt className="h-5 w-5" /> : activeQuickForm === 'income' ? <ArrowDownLeft className="h-5 w-5" /> : <PiggyBank className="h-5 w-5" />}
                 </div>
                 <div className="text-left">
-                  <h3 className="font-bold text-slate-800 text-sm">Rapidly Log New {activeQuickForm === 'expense' ? 'Expense' : 'Income'}</h3>
-                  <p className="text-[11px] text-slate-400 font-medium">Bypasses main tabs. Saves instantly.</p>
+                  <h3 className="font-bold text-slate-200 text-sm">Rapidly Log New {activeQuickForm === 'expense' ? 'Expense' : 'Income'}</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Bypasses main tabs. Saves instantly.</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveQuickForm(null)}
-                className="p-1.5 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1.5 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-350 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>

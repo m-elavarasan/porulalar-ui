@@ -7,34 +7,65 @@
   
   --color-primary-50: #f5f3ff;
   --color-primary-100: #ede9fe;
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-primary-700: #4338ca;
-  --color-primary-900: #312e81;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
+  --color-primary-900: #4c1d95;
   
-  --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02);
-  --shadow-glow: 0 0 20px -3px rgba(99, 102, 241, 0.15);
-  --shadow-glow-success: 0 0 20px -3px rgba(16, 185, 129, 0.15);
+  --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 25px -3px rgba(139, 92, 246, 0.25);
+  --shadow-glow-success: 0 0 25px -3px rgba(16, 185, 129, 0.25);
+  --shadow-glow-cyan: 0 0 25px -3px rgba(6, 182, 212, 0.25);
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #fafbfc;
+  background-color: #070a13;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.03) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.03) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(236, 72, 153, 0.04) 0px, transparent 50%);
   background-attachment: fixed;
-  color: #0f172a;
+  color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphism panel utility */
+/* Dark Glassmorphism panel utility */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Next-Gen Cursor Hover Glow Card (Linear/Vercel style) */
+.glow-card {
+  position: relative;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.glow-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: radial-gradient(circle 180px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(139, 92, 246, 0.4), rgba(6, 182, 212, 0.2) 50%, transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-card:hover::before {
+  opacity: 1;
 }
 
 /* Animations */
@@ -56,7 +87,7 @@ body {
   animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Sleek custom scrollbars */
+/* Sleek custom scrollbars for dark mode */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -67,17 +98,112 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #334155;
   border-radius: 9999px;
   border: 1px solid transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #475569;
 }
 
 /* Modern Input Focus styling */
 input:focus, select:focus, textarea:focus {
-  border-color: #6366f1 !important;
+  border-color: #8b5cf6 !important;
   box-shadow: var(--shadow-glow) !important;
+  background-color: rgba(3, 7, 18, 0.7) !important;
+  outline: none !important;
 }
+
+/* Global Overrides to force Dark SaaS Theme across all panels */
+.bg-white {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: #f1f5f9 !important;
+}
+
+.text-slate-800, .text-slate-700, .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+.text-slate-600, .text-slate-500, .text-slate-450, .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.border-slate-100, .border-slate-150, .border-slate-205, .border-slate-150\/60, .border-slate-200, .border-slate-200\/80, .border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.bg-slate-50, .bg-slate-50\/50, .bg-slate-100, .bg-slate-100\/70, .bg-slate-200 {
+  background-color: rgba(3, 7, 18, 0.6) !important;
+}
+
+/* Modals global styling overrides */
+.fixed.inset-0.bg-slate-900\/40, .fixed.inset-0.bg-slate-900\/60, .fixed.inset-0.bg-slate-950\/60, .fixed.inset-0.bg-slate-955\/65 {
+  background-color: rgba(3, 7, 18, 0.65) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Forms & Input Elements overrides */
+input, select, textarea {
+  background-color: rgba(3, 7, 18, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f1f5f9 !important;
+}
+
+/* Table rows styling */
+tr:hover {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+thead th {
+  color: #94a3b8 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Glowing borders for cards */
+.rounded-2xl, .rounded-3xl, .glow-card {
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s;
+  transform-style: preserve-3d;
+}
+
+.rounded-2xl::before, .rounded-3xl::before, .glow-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: radial-gradient(circle 180px at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(139, 92, 246, 0.35), rgba(6, 182, 212, 0.15) 50%, transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rounded-2xl:hover::before, .rounded-3xl:hover::before, .glow-card:hover::before {
+  opacity: 1;
+}
+
+/* Metallic Shimmer Sheen Reflection (CRED style) */
+.rounded-2xl::after, .rounded-3xl::after, .glow-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.05) 50%, transparent 70%);
+  background-size: 200% 200%;
+  background-position: 200% 0;
+  transition: background-position 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.rounded-2xl:hover::after, .rounded-3xl:hover::after, .glow-card:hover::after {
+  background-position: -200% -200%;
+}
+
