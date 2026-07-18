@@ -1612,9 +1612,4 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
       )}
     </div>
   );
-}  </div>
-        </div>
-      )}
-    </div>
-  );
 }
