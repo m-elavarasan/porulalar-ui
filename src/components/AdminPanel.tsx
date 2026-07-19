@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { adminService } from '../services/adminService';
 import { 
   Users, 
   ShieldCheck, 
@@ -72,31 +73,20 @@ export default function AdminPanel({ token }: AdminPanelProps) {
   const [newItemPath, setNewItemPath] = useState('');
   const [newItemIcon, setNewItemIcon] = useState('home');
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-  const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  });
 
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
     try {
       if (activeSubTab === 'stats') {
-        const res = await fetch(`${API_BASE}/api/admin/stats`, { headers: getHeaders() });
-        if (!res.ok) throw new Error('Failed to fetch stats');
-        const data = await res.json();
+        const data = await adminService.getStats();
         setStats(data);
       } else if (activeSubTab === 'users') {
-        const res = await fetch(`${API_BASE}/api/admin/users`, { headers: getHeaders() });
-        if (!res.ok) throw new Error('Failed to fetch users');
-        const data = await res.json();
+        const data = await adminService.getUsers();
         setUsersList(data);
       } else if (activeSubTab === 'menus') {
-        const res = await fetch(`${API_BASE}/api/admin/menus`, { headers: getHeaders() });
-        if (!res.ok) throw new Error('Failed to fetch menus');
-        const data = await res.json();
+        const data = await adminService.getMenus();
         setMenusList(data);
       }
     } catch (err: any) {
@@ -175,15 +165,7 @@ export default function AdminPanel({ token }: AdminPanelProps) {
 
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_BASE}/api/admin/users/${targetUser.id}/role`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify({ role: newRole })
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to update role');
-      }
+      await adminService.updateUserRole(targetUser.id, newRole);
       await showAlert(`User role updated to ${newRole} successfully!`, 'Role Updated', 'success');
       fetchData();
     } catch (err: any) {
@@ -221,27 +203,16 @@ export default function AdminPanel({ token }: AdminPanelProps) {
   const handleSaveMenuConfig = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_BASE}/api/admin/menus`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          role: selectedRole,
-          channel: selectedChannel,
-          menuItems: configItems
-        })
+      await adminService.saveMenuConfig({
+        role: selectedRole,
+        channel: selectedChannel,
+        menuItems: configItems
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to save menu config');
-      }
       await showAlert('Dynamic menu configuration saved successfully!', 'Menus Saved', 'success');
       
       // Reload menu configs list
-      const freshRes = await fetch(`${API_BASE}/api/admin/menus`, { headers: getHeaders() });
-      if (freshRes.ok) {
-        const data = await freshRes.json();
-        setMenusList(data);
-      }
+      const freshData = await adminService.getMenus();
+      setMenusList(freshData);
     } catch (err: any) {
       console.error(err);
       await showAlert(err.message || 'Action failed', 'Error', 'error');

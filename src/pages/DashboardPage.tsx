@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { porulalarStore } from '../lib/store';
 import { useAuth } from '../App';
 import { debounce } from '../lib/utils';
+import { dashboardService } from '../services/dashboardService';
 import {
   Grid,
   Layers,
@@ -60,16 +61,8 @@ export default function DashboardPage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/dashboard/stats`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
+      const data = await dashboardService.getStats();
+      setStats(data);
 
       // Fetch small collections for local calculations and details
       const [

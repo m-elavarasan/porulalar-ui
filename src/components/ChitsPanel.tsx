@@ -40,6 +40,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
   const [autoPay, setAutoPay] = useState(false);
   const [autoPaySourceId, setAutoPaySourceId] = useState('');
   const [paySourceIds, setPaySourceIds] = useState<{ [id: string]: string }>({});
+  const [commissionPct, setCommissionPct] = useState('5');
 
   // Chit YTM Calculator states
   const [activeTab, setActiveTab] = useState<'chits' | 'calculator'>('chits');
@@ -1186,7 +1187,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                     required
                     placeholder="e.g. 20"
                     value={totalTenureMonths}
-                    onChange={(e) => handleTenureMonthsChange(e.target.value)}
+                    onChange={(e) => setTotalTenureMonths(e.target.value)}
                     className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden font-mono font-bold text-slate-205"
                   />
                 </div>
@@ -1273,9 +1274,20 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                 if (!aMatured && bMatured) return -1;
                 return new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime();
               }).map((chit) => {
-                const sharePct = Number(chit.processingFee) > 0 ? (Number(chit.processingFee) / Number(chit.totalChitValue)) * 100 : 0;
                 const paidPct = (Number(chit.installmentsPaid) / Number(chit.numberOfMembers)) * 100;
                 const isMatured = Number(chit.installmentsPaid) >= Number(chit.numberOfMembers);
+                
+                // Calculate expected yield dynamically
+                const displayChitValue = chit.totalChitValue;
+                const displayMonthly = chit.monthlyContribution;
+                const chitTxs = transactions.filter(t => t.chitId === chit.id && t.type !== 'Prize Received');
+                const txSum = chitTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
+                const totalContributed = txSum > 0 ? txSum : (chit.amountPaidTillDate || (displayMonthly * chit.installmentsPaid));
+                const remainingInstallments = Math.max(0, chit.numberOfMembers - chit.installmentsPaid);
+                const displayPrizeReceived = chit.prizeAmountReceived || 0;
+                const expectedYield = chit.prizeTaken
+                  ? displayPrizeReceived - (totalContributed + (displayMonthly * remainingInstallments))
+                  : displayChitValue - (totalContributed + (displayMonthly * remainingInstallments));
                 
                 return (
                   <div 
@@ -1334,7 +1346,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                         <div className="space-y-0.5 border-l border-slate-900 pl-3">
                           <span className="font-bold text-slate-500 uppercase tracking-widest block">Paid / Outflow</span>
                           <span className="font-black text-slate-350 font-mono text-[11px]">
-                            ₹{Number(chit.amountPaid || 0).toLocaleString('en-IN')}
+                            ₹{Number(chit.amountPaidTillDate || 0).toLocaleString('en-IN')}
                           </span>
                         </div>
                         <div className="space-y-0.5 border-l border-slate-900 pl-3">
@@ -1351,7 +1363,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                           <span className="font-bold text-slate-500 uppercase tracking-widest block mb-0.5">Payout Status</span>
                           {chit.prizeTaken ? (
                             <span className="font-extrabold text-emerald-450 flex items-center gap-1">
-                              ✓ Received ₹{Number(chit.prizeAmount || 0).toLocaleString('en-IN')} (M{chit.prizeMonth})
+                              ✓ Received ₹{Number(chit.prizeAmountReceived || 0).toLocaleString('en-IN')} (M{chit.prizeTakenMonth})
                             </span>
                           ) : (
                             <span className="font-semibold text-slate-455">Pending Bidding</span>
@@ -1359,9 +1371,9 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                         </div>
                         <div>
                           <span className="font-bold text-slate-500 uppercase tracking-widest block mb-0.5">Expected Yield</span>
-                          {chit.expectedYield !== undefined ? (
-                            <span className={`font-black font-mono text-[11px] ${Number(chit.expectedYield) >= 0 ? 'text-emerald-455' : 'text-rose-455'}`}>
-                              {Number(chit.expectedYield) >= 0 ? '+' : '-'}₹{Math.abs(Number(chit.expectedYield)).toLocaleString('en-IN')}
+                          {expectedYield !== undefined ? (
+                            <span className={`font-black font-mono text-[11px] ${Number(expectedYield) >= 0 ? 'text-emerald-455' : 'text-rose-455'}`}>
+                              {Number(expectedYield) >= 0 ? '+' : '-'}₹{Math.abs(Number(expectedYield)).toLocaleString('en-IN')}
                             </span>
                           ) : (
                             <span className="font-medium text-slate-500 italic">Not Calculated</span>
@@ -1456,7 +1468,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleLogInstallment(chit)}
+                              onClick={() => handleLogCustomTx(chit)}
                               className="px-3.5 py-1 bg-violet-650 hover:bg-violet-700 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
                             >
                               Confirm Payment
@@ -1523,14 +1535,14 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                           )}
                         </button>
                         <button
-                          onClick={() => handleEditChit(chit)}
+                          onClick={() => handleEditClick(chit)}
                           className="p-1.5 hover:bg-slate-800 rounded-md text-slate-450 hover:text-cyan-400 border border-slate-850/30 transition-all cursor-pointer"
                           title="Edit Chit Details"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteChit(chit)}
+                          onClick={() => handleDeleteChit(chit.id)}
                           className="p-1.5 hover:bg-slate-850 rounded-md text-slate-450 hover:text-rose-500 border border-slate-850/30 transition-all cursor-pointer"
                           title="Delete Tracker"
                         >

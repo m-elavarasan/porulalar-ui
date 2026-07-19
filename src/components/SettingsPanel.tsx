@@ -1,4 +1,7 @@
 import { porulalarStore, increment } from '../lib/store';
+import { API_BASE } from '../lib/config';
+import { dataService } from '../services/dataService';
+import { googleService } from '../services/googleService';
 import React, { useRef, useState } from 'react';
 import { Sliders, Download, Upload, ShieldCheck, FileJson, AlertOctagon, Trash2, Mail, Link2, CheckCircle } from 'lucide-react';
 import { useDialog } from './DialogProvider';
@@ -35,7 +38,6 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
     setIsServerExporting(true);
     try {
       const token = localStorage.getItem('porulalar_access_token');
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       const url = `${API_BASE}/api/data/export?password=${encodeURIComponent(backupPassword)}&token=${token}`;
       
       const downloadAnchorNode = document.createElement('a');
@@ -65,25 +67,11 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
 
     setIsServerImporting(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       const formData = new FormData();
       formData.append('backupFile', file);
       formData.append('password', backupPassword);
 
-      const res = await fetch(`${API_BASE}/api/data/import`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Import failed');
-      }
-
-      const result = await res.json();
+      const result = await dataService.importBackup(formData);
       await showAlert(`Successfully imported ${result.count} records from server backup!`, 'Import Complete', 'success');
       if (onRefreshData) onRefreshData();
     } catch (err: any) {
@@ -102,20 +90,9 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
 
     setIsServerPurging(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const res = await fetch(`${API_BASE}/api/data/purge`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        }
-      });
-
-      if (res.ok) {
-        await showAlert('All records purged permanently from server.', 'Database Wiped', 'success');
-        if (onRefreshData) onRefreshData();
-      } else {
-        throw new Error('Failed to purge');
-      }
+      await dataService.purgeUserData();
+      await showAlert('All records purged permanently from server.', 'Database Wiped', 'success');
+      if (onRefreshData) onRefreshData();
     } catch (e) {
       await showAlert('Purge failed.', 'Error', 'error');
     } finally {
@@ -125,15 +102,8 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
 
   const checkGoogleStatus = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/google/status`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setGoogleLinked(data.linked);
-      }
+      const data = await googleService.getStatus();
+      setGoogleLinked(data.linked);
     } catch (e) {
       console.error(e);
     } finally {
@@ -147,7 +117,7 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
 
   const handleLinkGoogle = () => {
     const token = localStorage.getItem('porulalar_access_token');
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/google/link?token=${token}`;
+    window.location.href = `${API_BASE}/api/google/link?token=${token}`;
   };
 
   const handleDisconnectGoogle = async () => {
@@ -155,18 +125,9 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/google/disconnect`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        }
-      });
-      if (res.ok) {
-        setGoogleLinked(false);
-        await showAlert('Successfully disconnected Google Account.', 'Account Disconnected', 'success');
-      } else {
-        throw new Error('Failed to disconnect');
-      }
+      await googleService.disconnect(userId);
+      setGoogleLinked(false);
+      await showAlert('Successfully disconnected Google Account.', 'Account Disconnected', 'success');
     } catch (e) {
       await showAlert('Failed to disconnect Google Account.', 'Error', 'error');
     }
@@ -509,7 +470,7 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
             <div>
               <h3 className="text-sm font-bold text-emerald-800 mb-1">Your data is safe and encrypted</h3>
               <p className="text-xs text-emerald-600/80 leading-relaxed">
-                Porulalar relies entirely on Google's Firebase infrastructure. Your data is never sold, shared, or analyzed by third-parties. Only authenticated users can access their designated storage nodes.
+                Porulalar relies on a secure PostgreSQL database backend. Your data is encrypted, never sold, shared, or analyzed by third-parties, and only accessible to you.
               </p>
             </div>
           </div>

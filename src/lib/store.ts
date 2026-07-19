@@ -1,4 +1,4 @@
-// Centralized Redux/Pinia-like state management store for caching and offline-first mutations.
+import { apiClient } from './apiClient';
 
 const COLLECTION_MAP: Record<string, string> = {
   expenses: 'expenses',
@@ -23,15 +23,6 @@ const COLLECTION_MAP: Record<string, string> = {
   loan_transactions: 'loan_transactions',
 };
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-const getHeaders = () => {
-  const token = localStorage.getItem('porulalar_access_token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  };
-};
 
 class PorulalarStore {
   private cache: Record<string, any[]> = {};
@@ -79,11 +70,7 @@ class PorulalarStore {
     this.status[collectionName] = 'loading';
     this.activePromises[collectionName] = (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/${path}`, {
-          headers: getHeaders(),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const data = await apiClient.get<any[]>(`/api/${path}`);
         this.cache[collectionName] = data;
         this.status[collectionName] = 'loaded';
         this.notify(collectionName);
@@ -115,25 +102,14 @@ class PorulalarStore {
       ...filters
     });
 
-    const res = await fetch(`${API_BASE}/api/${path}?${queryParams.toString()}`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data;
+    return apiClient.get<{ items: any[]; total: number }>(`/api/${path}?${queryParams.toString()}`);
   }
 
   async addRecord(collectionName: string, data: any): Promise<any> {
     const path = COLLECTION_MAP[collectionName];
     if (!path) throw new Error(`Unknown collection ${collectionName}`);
 
-    const res = await fetch(`${API_BASE}/api/${path}`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error(`Add failed: ${res.statusText}`);
-    const result = await res.json();
+    const result = await apiClient.post<any>(`/api/${path}`, data);
 
     // Update cache
     if (!this.cache[collectionName]) this.cache[collectionName] = [];
@@ -147,12 +123,7 @@ class PorulalarStore {
     const path = COLLECTION_MAP[collectionName];
     if (!path) throw new Error(`Unknown collection ${collectionName}`);
 
-    const res = await fetch(`${API_BASE}/api/${path}/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(updates),
-    });
-    if (!res.ok) throw new Error(`Update failed: ${res.statusText}`);
+    await apiClient.put(`/api/${path}/${id}`, updates);
 
     // Update cache
     if (this.cache[collectionName]) {
@@ -167,11 +138,7 @@ class PorulalarStore {
     const path = COLLECTION_MAP[collectionName];
     if (!path) throw new Error(`Unknown collection ${collectionName}`);
 
-    const res = await fetch(`${API_BASE}/api/${path}/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(`Delete failed: ${res.statusText}`);
+    await apiClient.delete(`/api/${path}/${id}`);
 
     // Update cache
     if (this.cache[collectionName]) {

@@ -1,4 +1,5 @@
 import { porulalarStore, increment } from '../lib/store';
+import { bankService } from '../services/bankService';
 import React, { useState } from 'react';
 import { Plus, Trash, CheckCircle, Landmark, WalletCards, Pencil, Building2, ArrowRightLeft } from 'lucide-react';
 import { Bank } from '../types';
@@ -36,27 +37,9 @@ export default function BanksPanel({ userId, banks, onRefreshData }: BanksPanelP
 
     setIsLinkingAa(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const token = localStorage.getItem('porulalar_access_token');
-      const res = await fetch(`${API_BASE}/api/integrations/aa/consent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          bankName: aaBankName,
-          phoneNumber: aaPhoneNumber
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setAaConsentId(data.consentId);
-        setAaStep('otp');
-      } else {
-        throw new Error('Failed to create consent request');
-      }
+      const data = await bankService.createAAConsent(aaBankName, aaPhoneNumber);
+      setAaConsentId(data.consentId);
+      setAaStep('otp');
     } catch (e) {
       showAlert('Failed to connect with Account Aggregator portal.', 'Connection Error', 'error');
     } finally {
@@ -70,26 +53,9 @@ export default function BanksPanel({ userId, banks, onRefreshData }: BanksPanelP
 
     setIsLinkingAa(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const token = localStorage.getItem('porulalar_access_token');
-      const res = await fetch(`${API_BASE}/api/integrations/aa/fetch`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          consentId: aaConsentId,
-          bankName: aaBankName
-        })
-      });
-
-      if (res.ok) {
-        setAaStep('success');
-        if (onRefreshData) onRefreshData();
-      } else {
-        throw new Error('Failed to fetch AA statements');
-      }
+      await bankService.fetchAAData(aaConsentId, aaBankName);
+      setAaStep('success');
+      if (onRefreshData) onRefreshData();
     } catch (e) {
       showAlert('OTP Verification failed. Please try again.', 'Auth Error', 'error');
     } finally {

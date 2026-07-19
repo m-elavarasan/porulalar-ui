@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext, useRef, useMemo } from 'react';
-import { initAuth, googleSignIn, logout, getAccessToken, setAccessToken, backendLogin, backendRegister } from './lib/firebase';
+import { initAuth, googleSignIn, logout, getAccessToken, setAccessToken, backendLogin, backendRegister } from './lib/auth';
 import { porulalarStore } from './lib/store';
+import { schedulerService } from './services/schedulerService';
 import { debounce } from './lib/utils';
 import {
   Sparkles,
@@ -122,7 +123,7 @@ export default function App() {
 
   // Load cached user profile from previous session if available
   useEffect(() => {
-    const cachedUser = localStorage.getItem('cached_firebase_user');
+    const cachedUser = localStorage.getItem('porulalar_user');
     if (cachedUser) {
       try {
         const parsed = JSON.parse(cachedUser);
@@ -139,7 +140,7 @@ export default function App() {
           setUser(currentUser as AuthUser);
           setToken(accessToken);
           setNeedsAuth(false);
-          localStorage.setItem('cached_firebase_user', JSON.stringify({
+          localStorage.setItem('porulalar_user', JSON.stringify({
             uid: currentUser.uid,
             displayName: currentUser.displayName,
             email: currentUser.email,
@@ -149,7 +150,7 @@ export default function App() {
         }
       },
       () => {
-        const cachedUserObj = localStorage.getItem('cached_firebase_user');
+        const cachedUserObj = localStorage.getItem('porulalar_user');
         if (!cachedUserObj) {
           setNeedsAuth(true);
         }
@@ -200,7 +201,7 @@ export default function App() {
       setUser(null);
       setToken(null);
       setNeedsAuth(true);
-      localStorage.removeItem('cached_firebase_user');
+      localStorage.removeItem('porulalar_user');
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -428,18 +429,10 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
 
     // Initial Scheduler Trigger
     const triggerScheduler = async () => {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       try {
-        const res = await fetch(`${API_BASE}/api/scheduler/run`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-          }
-        });
-        if (res.ok) {
-          setSchedulerMessage("Auto-scheduled payments synced from backend successfully!");
-          setTimeout(() => setSchedulerMessage(null), 5000);
-        }
+        await schedulerService.runScheduler();
+        setSchedulerMessage("Auto-scheduled payments synced from backend successfully!");
+        setTimeout(() => setSchedulerMessage(null), 5000);
       } catch (err) {
         console.error('Failed to run scheduler:', err);
       }

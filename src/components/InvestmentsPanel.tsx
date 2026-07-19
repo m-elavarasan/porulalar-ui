@@ -1,4 +1,6 @@
 import { porulalarStore, increment } from '../lib/store';
+import { analyticsService } from '../services/analyticsService';
+import { bankService } from '../services/bankService';
 import React, { useState } from 'react';
 import { Plus, Trash, ArrowUpRight, TrendingUp, TrendingDown, PiggyBank, RefreshCw, Pencil, Upload, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Investment, Bank, Card } from '../types';
@@ -76,21 +78,12 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
   const fetchXIRRs = async () => {
     setLoadingXirr(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const token = localStorage.getItem('porulalar_access_token');
-      const res = await fetch(`${API_BASE}/api/analytics/xirr`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const data = await analyticsService.getXIRRs();
+      const mapping: { [id: string]: number } = {};
+      data.forEach((item: any) => {
+        mapping[item.id] = item.xirrPercentage;
       });
-      if (res.ok) {
-        const data = await res.json();
-        const mapping: { [id: string]: number } = {};
-        data.forEach((item: any) => {
-          mapping[item.id] = item.xirrPercentage;
-        });
-        setXirrValues(mapping);
-      }
+      setXirrValues(mapping);
     } catch (e) {
       console.error("Failed to fetch XIRRs:", e);
     } finally {
@@ -326,8 +319,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
     }
     setIsSearchingMf(true);
     try {
-      const res = await fetch(`https://api.mfapi.in/mf/search?q=${query}`);
-      const data = await res.json();
+      const data = await bankService.searchMutualFunds(query);
       setMfSearchResults(data || []);
     } catch (err) {
       console.error(err);
@@ -344,8 +336,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
     setIsSearchingStock(true);
     try {
       const url = encodeURIComponent(`https://query1.finance.yahoo.com/v1/finance/search?q=${query}&quotesCount=5&newsCount=0&region=IN&lang=en-IN`);
-      const res = await fetch(`https://api.allorigins.win/get?url=${url}`);
-      const data = await res.json();
+      const data = await bankService.fetchExternalUrlProxy(url);
       const parsed = JSON.parse(data.contents);
       setStockSearchResults(parsed.quotes || []);
     } catch (err) {
@@ -370,16 +361,14 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
         setIsSyncing(true);
         try {
           if (inv.investmentType === 'Mutual Fund' && inv.schemeCode) {
-            const res = await fetch(`https://api.mfapi.in/mf/${inv.schemeCode}`);
-            const data = await res.json();
+            const data = await bankService.fetchMFDetails(inv.schemeCode);
             if (data && data.data && data.data.length > 0) {
               livePrice = parseFloat(data.data[0].nav);
             }
           } 
           else if (inv.investmentType === 'Stocks' && inv.tickerSymbol) {
              const url = encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${inv.tickerSymbol}?interval=1d&range=1d`);
-             const res = await fetch(`https://api.allorigins.win/get?url=${url}`);
-             const data = await res.json();
+             const data = await bankService.fetchExternalUrlProxy(url);
              const parsed = JSON.parse(data.contents);
              const price = parsed?.chart?.result?.[0]?.meta?.regularMarketPrice;
              if (price) livePrice = parseFloat(price);
@@ -489,8 +478,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
         
         if (inv.investmentType === 'Mutual Fund' && inv.schemeCode) {
           try {
-            const res = await fetch(`https://api.mfapi.in/mf/${inv.schemeCode}`);
-            const data = await res.json();
+            const data = await bankService.fetchMFDetails(inv.schemeCode);
             if (data && data.data && data.data.length > 0) {
               livePrice = parseFloat(data.data[0].nav);
             }
@@ -501,8 +489,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
         else if (inv.investmentType === 'Stocks' && inv.tickerSymbol) {
            try {
              const url = encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${inv.tickerSymbol}?interval=1d&range=1d`);
-             const res = await fetch(`https://api.allorigins.win/get?url=${url}`);
-             const data = await res.json();
+             const data = await bankService.fetchExternalUrlProxy(url);
              const parsed = JSON.parse(data.contents);
              const price = parsed?.chart?.result?.[0]?.meta?.regularMarketPrice;
              if (price) livePrice = parseFloat(price);

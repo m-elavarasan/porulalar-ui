@@ -1,4 +1,5 @@
 import { porulalarStore, increment } from '../lib/store';
+import { analyticsService } from '../services/analyticsService';
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash, Shield, Medal, CheckCircle, Calendar, Edit, PiggyBank, TrendingUp, AlertTriangle, Percent, Award, ShieldAlert } from 'lucide-react';
 import { Asset, Goal } from '../types';
@@ -29,12 +30,9 @@ export default function AssetsGoalsPanel({ userId, assets, goals, onRefreshData 
   const [otherDeductions, setOtherDeductions] = useState(50000);
   const [taxResult, setTaxResult] = useState<any>(null);
   const [loadingTax, setLoadingTax] = useState(false);
-
   const fetchAllocation = async () => {
     setLoadingAllocation(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const token = localStorage.getItem('porulalar_access_token');
       // Read targets set in settings panel
       const targetEq = Number(localStorage.getItem('target_equity') || '50');
       const targetDe = Number(localStorage.getItem('target_debt') || '20');
@@ -50,15 +48,15 @@ export default function AssetsGoalsPanel({ userId, assets, goals, onRefreshData 
         cash: targetCa.toString(),
       });
 
-      const res = await fetch(`${API_BASE}/api/analytics/asset-allocation?${queryParams.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const data = await analyticsService.getAssetAllocation({
+        userId,
+        equity: targetEq.toString(),
+        debt: targetDe.toString(),
+        gold: targetGo.toString(),
+        realestate: targetRe.toString(),
+        cash: targetCa.toString(),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setAllocationData(data);
-      }
+      setAllocationData(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -69,25 +67,13 @@ export default function AssetsGoalsPanel({ userId, assets, goals, onRefreshData 
   const estimateTax = async () => {
     setLoadingTax(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const token = localStorage.getItem('porulalar_access_token');
-      const res = await fetch(`${API_BASE}/api/analytics/tax-estimator`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          grossIncome,
-          deductions80C,
-          deductions80D,
-          otherDeductions
-        })
+      const data = await analyticsService.estimateTax({
+        grossIncome,
+        deductions80C,
+        deductions80D,
+        otherDeductions
       });
-      if (res.ok) {
-        const data = await res.json();
-        setTaxResult(data);
-      }
+      setTaxResult(data);
     } catch (e) {
       console.error(e);
     } finally {

@@ -1,7 +1,9 @@
 import { porulalarStore, increment } from '../lib/store';
+import { aiService } from '../services/aiService';
+import { googleService } from '../services/googleService';
 import React, { useState, useEffect } from 'react';
 import { Send, Bot, Sparkles, User, ShieldAlert, Check, X, RefreshCw, Mail, Calendar, TrendingUp } from 'lucide-react';
-import { fetchGmailTransactions, GmailDraft } from '../lib/googleServices';
+import { GmailDraft } from '../services/googleService';
 import { useDialog } from './DialogProvider';
 import { Link } from 'react-router-dom';
 
@@ -64,15 +66,8 @@ export default function AIPanel({
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/google/status`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setGoogleLinked(data.linked);
-        }
+        const data = await googleService.getStatus();
+        setGoogleLinked(data.linked);
       } catch (e) {
         console.error(e);
       }
@@ -114,17 +109,7 @@ export default function AIPanel({
         goals,
       };
 
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageToSend, context }),
-      });
-
-      if (!res.ok) {
-        throw new Error('AI Server responded with an error');
-      }
-
-      const data = await res.json();
+      const data = await aiService.sendMessage(messageToSend, context);
 
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -336,22 +321,7 @@ export default function AIPanel({
   const handleSyncGmail = async () => {
     setSyncingGmail(true);
     try {
-      const fetchRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/fetch-gmail-messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        },
-        body: JSON.stringify({})
-      });
-
-      if (!fetchRes.ok) {
-        const errData = await fetchRes.json();
-        await showAlert(errData.error || 'Failed to fetch messages from Google. Link your Google account in Settings.', 'Gmail Sync Required', 'warning');
-        return;
-      }
-
-      const fetchResult = await fetchRes.json();
+      const fetchResult = await googleService.fetchGmailMessagesBackend(userId);
       const messagesFetched = fetchResult.messages || [];
       if (messagesFetched.length === 0) {
         setGmailDrafts([]);
@@ -359,21 +329,8 @@ export default function AIPanel({
         return;
       }
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/parse-gmail-messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        },
-        body: JSON.stringify({ messages: messagesFetched }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setGmailDrafts(data.drafts || []);
-      } else {
-        throw new Error('Failed to parse gmail snippets');
-      }
+      const data = await googleService.parseGmailMessagesBackend(userId, { messages: messagesFetched });
+      setGmailDrafts(data.drafts || []);
     } catch (err: any) {
       console.error(err);
       await showAlert('Gmail transaction sync failed. Please link your Google Account in Settings.', 'Sync Error', 'error');
@@ -394,28 +351,15 @@ export default function AIPanel({
         date: manualDate,
       };
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/parse-gmail-messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        },
-        body: JSON.stringify({ messages: [manualMsg] }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const drafts = data.drafts || [];
-        const parsedData = drafts.length > 0 ? drafts[0] : null;
-        
-        if (!parsedData || !parsedData.parsed || parsedData.parsed.action === 'unknown') {
-          await showAlert('Could not parse any financial transaction from the text. Make sure it contains values and is financial.', 'Parse Failed', 'warning');
-        } else {
-          setGmailDrafts((prev) => [parsedData, ...prev]);
-          setManualSnippet('');
-        }
+      const data = await googleService.parseGmailMessagesBackend(userId, { messages: [manualMsg] });
+      const drafts = data.drafts || [];
+      const parsedData = drafts.length > 0 ? drafts[0] : null;
+      
+      if (!parsedData || !parsedData.parsed || parsedData.parsed.action === 'unknown') {
+        await showAlert('Could not parse any financial transaction from the text. Make sure it contains values and is financial.', 'Parse Failed', 'warning');
       } else {
-        await showAlert('Parsing failed. Ensure Gemini API key is configured.', 'Parse Failed', 'error');
+        setGmailDrafts((prev) => [parsedData, ...prev]);
+        setManualSnippet('');
       }
     } catch (err: any) {
       console.error("Manual parse error:", err);
@@ -451,19 +395,8 @@ export default function AIPanel({
         }
       ];
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/parse-gmail-messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('porulalar_access_token')}`
-        },
-        body: JSON.stringify({ messages: demoMessages }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setGmailDrafts(data.drafts || []);
-      }
+      const data = await googleService.parseGmailMessagesBackend(userId, { messages: demoMessages });
+      setGmailDrafts(data.drafts || []);
     } catch (err) {
       console.error(err);
     } finally {
