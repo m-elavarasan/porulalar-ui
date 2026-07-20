@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import CardsPanel from '../components/CardsPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import CardsPanel from '../../components/CardsPanel';
 
 export default function CardsPage() {
   const { user } = useAuth();

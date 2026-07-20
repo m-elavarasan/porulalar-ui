@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import SettingsPanel from '../components/SettingsPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import SettingsPanel from '../../components/SettingsPanel';
 
 export default function SettingsPage() {
   const { user } = useAuth();

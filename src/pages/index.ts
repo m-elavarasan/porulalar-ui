@@ -1,0 +1,15 @@
+export { default as AdminPage } from './admin/AdminPage';
+export { default as DashboardPage } from './finance/DashboardPage';
+export { default as ExpensesPage } from './finance/ExpensesPage';
+export { default as IncomePage } from './finance/IncomePage';
+export { default as BorrowsPage } from './finance/BorrowsPage';
+export { default as BanksPage } from './banking/BanksPage';
+export { default as CardsPage } from './banking/CardsPage';
+export { default as EMIsPage } from './obligations/EMIsPage';
+export { default as LoansPage } from './obligations/LoansPage';
+export { default as ChitsPage } from './obligations/ChitsPage';
+export { default as RecurringPage } from './obligations/RecurringPage';
+export { default as InvestmentsPage } from './portfolio/InvestmentsPage';
+export { default as AssetsGoalsPage } from './portfolio/AssetsGoalsPage';
+export { default as AIPage } from './system/AIPage';
+export { default as SettingsPage } from './system/SettingsPage';

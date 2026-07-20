@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import AssetsGoalsPanel from '../components/AssetsGoalsPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import AssetsGoalsPanel from '../../components/AssetsGoalsPanel';
 
 export default function AssetsGoalsPage() {
   const { user } = useAuth();

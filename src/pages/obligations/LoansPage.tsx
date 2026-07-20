@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import EMIsPanel from '../components/EMIsPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import LoansPanel from '../../components/LoansPanel';
 
-export default function EMIsPage() {
+export default function LoansPage() {
   const { user } = useAuth();
-  const [emis, setEmis] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
   const [banks, setBanks] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
 
@@ -16,16 +16,16 @@ export default function EMIsPage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      const [emisList, banksList, cardsList] = await Promise.all([
-        porulalarStore.fetchCollection('emis'),
+      const [loansList, banksList, cardsList] = await Promise.all([
+        porulalarStore.fetchCollection('loans'),
         porulalarStore.fetchCollection('banks'),
         porulalarStore.fetchCollection('cards')
       ]);
-      setEmis(emisList);
+      setLoans(loansList);
       setBanks(banksList);
       setCards(cardsList);
     } catch (err) {
-      console.error('Error loading EMIs page data:', err);
+      console.error('Error loading loans page data:', err);
     } finally {
       isLoadingRef.current = false;
     }
@@ -37,18 +37,19 @@ export default function EMIsPage() {
 
   useEffect(() => {
     loadData();
-    const unsub = porulalarStore.subscribe('emis', debouncedLoadData);
+    const unsub = porulalarStore.subscribe('loans', debouncedLoadData);
     return () => unsub();
   }, []);
 
   if (!user) return null;
 
   return (
-    <EMIsPanel
+    <LoansPanel
       userId={user.uid}
-      emis={emis}
+      loans={loans}
       banks={banks}
       cards={cards}
+      accessToken={null}
       onRefreshData={loadData}
     />
   );

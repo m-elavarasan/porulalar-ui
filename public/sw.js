@@ -1,18 +1,7 @@
-const CACHE_NAME = 'porulalar-pwa-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/src/main.tsx',
-  '/src/index.css',
-  '/src/App.tsx'
-];
+const CACHE_NAME = 'porulalar-pwa-v2';
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
@@ -30,8 +19,11 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only cache GET requests
+  // Only cache http/https GET requests
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  if (url.pathname.includes('/_vercel') || url.pathname.includes('/api/')) return;
 
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
@@ -39,16 +31,14 @@ self.addEventListener('fetch', (e) => {
         return cachedResponse;
       }
       return fetch(e.request).then((response) => {
-        // Cache dynamic assets on the fly
         if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(e.request, responseToCache);
+            cache.put(e.request, responseToCache).catch(() => {});
           });
         }
         return response;
       }).catch(() => {
-        // Fallback for offline API/navigation
         if (e.request.mode === 'navigate') {
           return caches.match('/index.html');
         }

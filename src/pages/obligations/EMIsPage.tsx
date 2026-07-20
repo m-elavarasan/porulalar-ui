@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import InvestmentsPanel from '../components/InvestmentsPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import EMIsPanel from '../../components/EMIsPanel';
 
-export default function InvestmentsPage() {
+export default function EMIsPage() {
   const { user } = useAuth();
-  const [investments, setInvestments] = useState<any[]>([]);
+  const [emis, setEmis] = useState<any[]>([]);
   const [banks, setBanks] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
 
@@ -16,16 +16,16 @@ export default function InvestmentsPage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      const [invList, banksList, cardsList] = await Promise.all([
-        porulalarStore.fetchCollection('investments'),
+      const [emisList, banksList, cardsList] = await Promise.all([
+        porulalarStore.fetchCollection('emis'),
         porulalarStore.fetchCollection('banks'),
         porulalarStore.fetchCollection('cards')
       ]);
-      setInvestments(invList);
+      setEmis(emisList);
       setBanks(banksList);
       setCards(cardsList);
     } catch (err) {
-      console.error('Error loading investments page data:', err);
+      console.error('Error loading EMIs page data:', err);
     } finally {
       isLoadingRef.current = false;
     }
@@ -37,16 +37,16 @@ export default function InvestmentsPage() {
 
   useEffect(() => {
     loadData();
-    const unsub = porulalarStore.subscribe('investments', debouncedLoadData);
+    const unsub = porulalarStore.subscribe('emis', debouncedLoadData);
     return () => unsub();
   }, []);
 
   if (!user) return null;
 
   return (
-    <InvestmentsPanel
+    <EMIsPanel
       userId={user.uid}
-      investments={investments}
+      emis={emis}
       banks={banks}
       cards={cards}
       onRefreshData={loadData}

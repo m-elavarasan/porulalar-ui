@@ -1,0 +1,21 @@
+{
+  "short_name": "Porulalar",
+  "name": "Porulalar AI - Wealth Manager & Supervisor",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#070a13",
+  "theme_color": "#070a13",
+  "display": "standalone",
+  "orientation": "portrait"
+}

@@ -1,17 +1,15 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import IncomePanel from '../components/IncomePanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import IncomePanel from '../../components/IncomePanel';
 
 export default function IncomePage() {
   const { user } = useAuth();
 
-  // Data lists
   const [income, setIncome] = useState<any[]>([]);
   const [banks, setBanks] = useState<any[]>([]);
 
-  // Pagination & Filter parameters
   const [page, setPage] = useState(1);
   const [totalIncome, setTotalIncome] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,9 +25,8 @@ export default function IncomePage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      // 1. Fetch paginated income from server
       const filters: Record<string, string> = {};
-      if (filterSource !== 'All') filters.category = filterSource; // backend ListHandler checks Category filter parameter
+      if (filterSource !== 'All') filters.category = filterSource;
       if (searchQuery) filters.search = searchQuery;
       if (startDateFilter) filters.startDate = startDateFilter;
       if (endDateFilter) filters.endDate = endDateFilter;
@@ -38,7 +35,6 @@ export default function IncomePage() {
       setIncome(paginatedRes.items || []);
       setTotalIncome(paginatedRes.total || 0);
 
-      // 2. Fetch banks from cache store
       const banksList = await porulalarStore.fetchCollection('banks');
       setBanks(banksList);
     } catch (err) {
@@ -55,7 +51,6 @@ export default function IncomePage() {
   useEffect(() => {
     fetchIncomeData();
 
-    // Subscribe to store updates to auto-refresh on mutations
     const unsubIncome = porulalarStore.subscribe('income', debouncedFetchIncomeData);
     const unsubBanks = porulalarStore.subscribe('banks', debouncedFetchIncomeData);
 
@@ -65,7 +60,6 @@ export default function IncomePage() {
     };
   }, [page, searchQuery, filterSource, startDateFilter, endDateFilter]);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [searchQuery, filterSource, startDateFilter, endDateFilter]);

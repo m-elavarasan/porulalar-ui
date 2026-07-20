@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import AIPanel from '../components/AIPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import AIPanel from '../../components/AIPanel';
 
 export default function AIPage() {
   const { user, token } = useAuth();

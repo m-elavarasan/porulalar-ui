@@ -21,7 +21,6 @@ interface AdminPanelProps {
 
 interface UserProfile {
   id: string;
-  username: string;
   email: string;
   role: string;
   createdAt: string;
@@ -160,7 +159,7 @@ export default function AdminPanel({ token }: AdminPanelProps) {
   };
 
   const handleUpdateRole = async (targetUser: UserProfile, newRole: string) => {
-    const confirm = await showConfirm(`Are you sure you want to change role of ${targetUser.username} to "${newRole}"?`);
+    const confirm = await showConfirm(`Are you sure you want to change role of ${targetUser.email} to "${newRole}"?`);
     if (!confirm) return;
 
     try {
@@ -342,7 +341,6 @@ export default function AdminPanel({ token }: AdminPanelProps) {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 font-bold">Username</th>
                   <th className="py-3.5 px-4 font-bold">Email</th>
                   <th className="py-3.5 px-4 font-bold">Role</th>
                   <th className="py-3.5 px-4 font-bold">Registered At</th>
@@ -352,7 +350,6 @@ export default function AdminPanel({ token }: AdminPanelProps) {
               <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
                 {usersList.map((usr) => (
                   <tr key={usr.id} className="hover:bg-slate-50/30">
-                    <td className="py-3.5 px-4">{usr.username}</td>
                     <td className="py-3.5 px-4 font-normal">{usr.email}</td>
                     <td className="py-3.5 px-4">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${

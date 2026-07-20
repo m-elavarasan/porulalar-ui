@@ -1140,7 +1140,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
 
       {/* CAS Ingest Modal */}
       {showCasModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/25 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border border-slate-100 space-y-6 text-left">
             <div>
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">

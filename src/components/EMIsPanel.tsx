@@ -207,7 +207,7 @@ export default function EMIsPanel({ userId, emis, banks, cards, onRefreshData }:
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer"
         >
           {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {showAddForm ? 'Cancel' : 'New EMI'}
@@ -299,7 +299,7 @@ export default function EMIsPanel({ userId, emis, banks, cards, onRefreshData }:
                 </div>
               )}
             </div>
-            <button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md whitespace-nowrap">{editingEmiId ? "Update EMI" : "Save EMI"}</button>
+            <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-md whitespace-nowrap">{editingEmiId ? "Update EMI" : "Save EMI"}</button>
           </div>
         </form>
       )}

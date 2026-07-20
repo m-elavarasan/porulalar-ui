@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import ChitsPanel from '../components/ChitsPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import InvestmentsPanel from '../../components/InvestmentsPanel';
 
-export default function ChitsPage() {
+export default function InvestmentsPage() {
   const { user } = useAuth();
-  const [chits, setChits] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
   const [banks, setBanks] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
 
@@ -16,16 +16,16 @@ export default function ChitsPage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      const [chitsList, banksList, cardsList] = await Promise.all([
-        porulalarStore.fetchCollection('chits'),
+      const [invList, banksList, cardsList] = await Promise.all([
+        porulalarStore.fetchCollection('investments'),
         porulalarStore.fetchCollection('banks'),
         porulalarStore.fetchCollection('cards')
       ]);
-      setChits(chitsList);
+      setInvestments(invList);
       setBanks(banksList);
       setCards(cardsList);
     } catch (err) {
-      console.error('Error loading chits page data:', err);
+      console.error('Error loading investments page data:', err);
     } finally {
       isLoadingRef.current = false;
     }
@@ -37,19 +37,18 @@ export default function ChitsPage() {
 
   useEffect(() => {
     loadData();
-    const unsub = porulalarStore.subscribe('chits', debouncedLoadData);
+    const unsub = porulalarStore.subscribe('investments', debouncedLoadData);
     return () => unsub();
   }, []);
 
   if (!user) return null;
 
   return (
-    <ChitsPanel
+    <InvestmentsPanel
       userId={user.uid}
-      chits={chits}
+      investments={investments}
       banks={banks}
       cards={cards}
-      accessToken={null}
       onRefreshData={loadData}
     />
   );

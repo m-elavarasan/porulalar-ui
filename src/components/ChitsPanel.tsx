@@ -805,23 +805,23 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
   return (
     <div className="space-y-6">
       {/* Tabs Menu */}
-      <div className="flex bg-slate-950/40 p-1 rounded-xl w-fit gap-1 border border-slate-900 shadow-2xs mb-2 select-none">
+      <div className="flex bg-slate-200/80 p-1 rounded-2xl w-fit gap-1 border border-slate-300 shadow-2xs mb-2 select-none">
         <button
           onClick={() => setActiveTab('chits')}
-          className={`px-4 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all duration-200 ${
+          className={`px-4 py-2 text-xs font-bold rounded-xl cursor-pointer transition-all duration-200 ${
             activeTab === 'chits'
-              ? 'bg-gradient-to-r from-violet-650 to-fuchsia-600 text-white shadow-xs'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-indigo-600 text-white shadow-xs font-black'
+              : 'text-slate-700 hover:text-slate-900'
           }`}
         >
           Chit Funds Ledger
         </button>
         <button
           onClick={() => setActiveTab('calculator')}
-          className={`px-4 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition-all duration-200 ${
+          className={`px-4 py-2 text-xs font-bold rounded-lg cursor-pointer transition-all duration-200 ${
             activeTab === 'calculator'
-              ? 'bg-gradient-to-r from-violet-650 to-fuchsia-600 text-white shadow-xs'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-indigo-600 text-white shadow-xs font-black'
+              : 'text-slate-700 hover:text-slate-900'
           }`}
         >
           Interactive YTM Simulator
@@ -830,49 +830,48 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
       {activeTab === 'calculator' && (
         <div 
-          onMouseMove={handleMouseMove}
-          className="glow-card rounded-3xl p-6 md:p-8 space-y-6 text-left animate-scale-in"
+          className="white-app-card rounded-3xl p-6 md:p-8 space-y-6 text-left"
         >
           <div>
-            <h3 className="text-lg font-black text-slate-100 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-violet-400 animate-pulse" /> Interactive Auction Bidding Simulator
+            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-indigo-600" /> Interactive Auction Bidding Simulator
             </h3>
             <p className="text-xs text-slate-500 mt-1">Drag the months slider to simulate winning the auction, instantly calculating annualized yields (YTM) and modeling dynamic cash flows.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Input Controls */}
-            <div className="lg:col-span-2 space-y-4.5 bg-slate-950/40 p-5 rounded-2xl border border-slate-900 shadow-3xs">
-              <h4 className="text-[10px] font-bold text-slate-455 uppercase tracking-widest border-b border-slate-900 pb-2">Simulation Parameters</h4>
+            <div className="lg:col-span-2 space-y-4.5 bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-2xs">
+              <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-200 pb-2">Simulation Parameters</h4>
               <div>
-                <label className="block text-[10px] font-bold text-slate-455 mb-1.5">Chit Fund Value (₹)</label>
+                <label className="block text-[10px] font-bold text-slate-600 mb-1.5">Chit Fund Value (₹)</label>
                 <input 
                   type="number" 
                   value={calcChitValue}
                   onChange={(e) => setCalcChitValue(e.target.value)}
-                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:bg-slate-950 transition-all font-mono"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 transition-all font-mono"
                   placeholder="e.g. 100000"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-455 mb-1.5">Total Members</label>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1.5">Total Members</label>
                   <input 
                     type="number" 
                     value={calcMembers}
                     onChange={(e) => setCalcMembers(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:bg-slate-950 transition-all font-mono"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 transition-all font-mono"
                     placeholder="e.g. 20"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-455 mb-1.5">Bid Discount (₹)</label>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1.5">Bid Discount (₹)</label>
                   <input 
                     type="number" 
                     value={calcBidDiscount}
                     onChange={(e) => setCalcBidDiscount(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:bg-slate-950 transition-all font-mono"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 transition-all font-mono"
                     placeholder="e.g. 30000"
                   />
                 </div>
@@ -880,33 +879,33 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-455 mb-1.5">Commission (%)</label>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1.5">Commission (%)</label>
                   <input 
                     type="number" 
                     value={calcCommissionPct}
                     onChange={(e) => setCalcCommissionPct(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:bg-slate-950 transition-all font-mono"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 transition-all font-mono"
                     placeholder="e.g. 5"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-455 mb-1.5">Prize Month</label>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1.5">Prize Month</label>
                   <input 
                     type="number" 
                     min="1"
                     max={calcMembers}
                     value={calcPrizeMonth}
                     onChange={(e) => setCalcPrizeMonth(Number(e.target.value))}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:bg-slate-950 transition-all font-mono"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 transition-all font-mono"
                   />
                 </div>
               </div>
 
               {/* Range Slider Interaction */}
-              <div className="pt-2 border-t border-slate-905">
+              <div className="pt-2 border-t border-slate-200">
                 <div className="flex justify-between items-center text-xs font-bold mb-2">
-                  <span className="text-slate-400">Timeline Slider:</span>
-                  <span className="text-violet-400 font-mono">Month {calcPrizeMonth} of {calcMembers || 20}</span>
+                  <span className="text-slate-600">Timeline Slider:</span>
+                  <span className="text-indigo-600 font-mono">Month {calcPrizeMonth} of {calcMembers || 20}</span>
                 </div>
                 <input 
                   type="range"
@@ -914,7 +913,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                   max={calcMembers || 20}
                   value={calcPrizeMonth}
                   onChange={(e) => setCalcPrizeMonth(Number(e.target.value))}
-                  className="w-full h-1.5 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-violet-500"
+                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
                 <div className="flex justify-between text-[9px] text-slate-500 font-bold mt-1 font-mono">
                   <span>Month 1</span>
@@ -932,26 +931,26 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                   <>
                     {/* Key Metric Deck */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-slate-950/40 p-4 border border-slate-900 rounded-2xl space-y-1 shadow-3xs text-left">
-                        <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block">Net Payout Received</span>
-                        <span className="text-base font-black text-slate-200 font-mono">₹{results.prizeMoney.toLocaleString('en-IN')}</span>
+                      <div className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-1 shadow-2xs text-left">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Net Payout Received</span>
+                        <span className="text-base font-black text-slate-900 font-mono">₹{results.prizeMoney.toLocaleString('en-IN')}</span>
                       </div>
-                      <div className="bg-slate-950/40 p-4 border border-slate-900 rounded-2xl space-y-1 shadow-3xs text-left">
-                        <span className="text-[10px] font-bold text-slate-550 uppercase tracking-widest block">Net Contribution</span>
-                        <span className="text-base font-black text-slate-200 font-mono">₹{results.netPayment.toLocaleString('en-IN')}</span>
+                      <div className="bg-slate-50 p-4 border border-slate-200 rounded-2xl space-y-1 shadow-2xs text-left">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Net Contribution</span>
+                        <span className="text-base font-black text-slate-900 font-mono">₹{results.netPayment.toLocaleString('en-IN')}</span>
                       </div>
-                      <div className="bg-gradient-to-tr from-violet-650 to-fuchsia-600 text-white p-4 rounded-2xl shadow-glow relative overflow-hidden flex flex-col justify-center text-left">
-                        <div className="absolute -right-3 -top-3 h-14 w-14 bg-white/5 rounded-full pointer-events-none" />
-                        <span className="text-[9px] font-bold text-violet-200 uppercase tracking-widest block z-10">Annualized Yield (YTM)</span>
+                      <div className="bg-indigo-600 text-white p-4 rounded-2xl shadow-xs relative overflow-hidden flex flex-col justify-center text-left">
+                        <div className="absolute -right-3 -top-3 h-14 w-14 bg-white/10 rounded-full pointer-events-none" />
+                        <span className="text-[9px] font-bold text-indigo-100 uppercase tracking-widest block z-10">Annualized Yield (YTM)</span>
                         <span className="text-2xl font-black font-mono tracking-tight z-10">{results.annualizedYTM.toFixed(2)}%</span>
                       </div>
                     </div>
 
                     {/* Recharts Live Cash Flow */}
-                    <div className="p-4 bg-slate-950/40 border border-slate-900 rounded-2xl space-y-3">
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                       <div className="flex justify-between items-center">
-                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                          <BarChart2 className="h-3.5 w-3.5 text-violet-400" /> Cash Flow Visualizer
+                        <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
+                          <BarChart2 className="h-3.5 w-3.5 text-indigo-600" /> Cash Flow Visualizer
                         </h4>
                         <span className="text-[9px] font-semibold text-slate-500">Green = Net Prize | Red = Monthly Payment</span>
                       </div>
@@ -966,9 +965,9 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                                 if (active && payload && payload.length) {
                                   const item = payload[0].payload;
                                   return (
-                                    <div className="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-left shadow-lg">
+                                    <div className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-left shadow-lg">
                                       <p className="text-[9px] font-bold text-slate-500 font-mono">Month {item.month}</p>
-                                      <p className={`text-xs font-black font-mono ${item.type === 'Prize Received' ? 'text-emerald-450' : 'text-rose-455'}`}>
+                                      <p className={`text-xs font-black font-mono ${item.type === 'Prize Received' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                         {item.label}
                                       </p>
                                     </div>
@@ -995,22 +994,22 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
               })()}
 
               {/* AI Bidding Advisor Insights */}
-              <div className="p-4 bg-gradient-to-tr from-slate-900/60 to-slate-950/60 border border-slate-850 rounded-2xl space-y-2.5">
-                <h4 className="text-[10px] font-bold text-violet-400 uppercase tracking-widest flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-violet-400" /> Bidding Engine Insights
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-indigo-600" /> Bidding Engine Insights
                 </h4>
-                <div className="text-[11px] text-slate-400 leading-relaxed">
+                <div className="text-[11px] text-slate-600 leading-relaxed">
                   {calcPrizeMonth <= Math.round((calcMembers || 20) * 0.25) ? (
                     <p>
-                      ⚠️ <strong className="text-rose-400">Early Auction Bid Phase:</strong> Bidding in months 1 to {Math.round((calcMembers || 20) * 0.25)} is optimal only if you have an urgent personal need for capital (e.g. debt repayment, immediate asset purchase). The high bid discount of ₹{calcBidDiscount.toLocaleString('en-IN')} reduces your effective YTM return to <span className="font-bold text-rose-400 font-mono">{calculateChitYTM().annualizedYTM.toFixed(2)}%</span>.
+                      ⚠️ <strong className="text-rose-600">Early Auction Bid Phase:</strong> Bidding in months 1 to {Math.round((calcMembers || 20) * 0.25)} is optimal only if you have an urgent personal need for capital (e.g. debt repayment, immediate asset purchase). The high bid discount of ₹{calcBidDiscount.toLocaleString('en-IN')} reduces your effective YTM return to <span className="font-bold text-rose-600 font-mono">{calculateChitYTM().annualizedYTM.toFixed(2)}%</span>.
                     </p>
                   ) : calcPrizeMonth >= Math.round((calcMembers || 20) * 0.75) ? (
                     <p>
-                      💎 <strong className="text-emerald-450">Late Auction Dividends Peak:</strong> Bidding in the final months (Month {Math.round((calcMembers || 20) * 0.75)} to {calcMembers}) acts as an excellent savings instrument. You secure maximum dividend pools from previous rounds, yielding an estimated annualized return of <span className="font-bold text-emerald-450 font-mono">{calculateChitYTM().annualizedYTM.toFixed(2)}%</span>.
+                      💎 <strong className="text-emerald-700">Late Auction Dividends Peak:</strong> Bidding in the final months (Month {Math.round((calcMembers || 20) * 0.75)} to {calcMembers}) acts as an excellent savings instrument. You secure maximum dividend pools from previous rounds, yielding an estimated annualized return of <span className="font-bold text-emerald-700 font-mono">{calculateChitYTM().annualizedYTM.toFixed(2)}%</span>.
                     </p>
                   ) : (
                     <p>
-                      ⚡ <strong className="text-cyan-400">Mid-Term Balance Phase:</strong> Month {calcPrizeMonth} offers a solid balance between cash availability and dividend earnings. You receive a net prize payout of <span className="font-bold text-white font-mono">₹{calculateChitYTM().prizeMoney.toLocaleString('en-IN')}</span> while securing a moderate yield rate.
+                      ⚡ <strong className="text-indigo-600">Mid-Term Balance Phase:</strong> Month {calcPrizeMonth} offers a solid balance between cash availability and dividend earnings. You receive a net prize payout of <span className="font-bold text-slate-900 font-mono">₹{calculateChitYTM().prizeMoney.toLocaleString('en-IN')}</span> while securing a moderate yield rate.
                     </p>
                   )}
                 </div>
@@ -1021,59 +1020,55 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
       )}
 
       {activeTab === 'chits' && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6">
           {/* Stats Summary Deck */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div 
-              onMouseMove={handleMouseMove}
-              className="glow-card p-5 rounded-2xl flex items-center justify-between transition-all duration-300"
+              className="white-app-card p-5 rounded-2xl flex items-center justify-between shadow-2xs"
             >
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Active Value</span>
-                <span className="text-xl font-black text-slate-100 font-mono">₹{statsSummary.totalValue.toLocaleString('en-IN')}</span>
+                <span className="text-xl font-black text-slate-900 font-mono">₹{statsSummary.totalValue.toLocaleString('en-IN')}</span>
               </div>
-              <div className="h-10 w-10 bg-violet-950/40 text-violet-400 rounded-xl flex items-center justify-center border border-violet-850 shadow-2xs">
+              <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100 shadow-2xs">
                 <Landmark className="h-5 w-5" />
               </div>
             </div>
 
             <div 
-              onMouseMove={handleMouseMove}
-              className="glow-card p-5 rounded-2xl flex items-center justify-between transition-all duration-300"
+              className="white-app-card p-5 rounded-2xl flex items-center justify-between shadow-2xs"
             >
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Monthly Bill</span>
-                <span className="text-xl font-black text-slate-100 font-mono">₹{statsSummary.totalMonthly.toLocaleString('en-IN')}</span>
+                <span className="text-xl font-black text-slate-900 font-mono">₹{statsSummary.totalMonthly.toLocaleString('en-IN')}</span>
               </div>
-              <div className="h-10 w-10 bg-indigo-950/40 text-indigo-400 rounded-xl flex items-center justify-center border border-indigo-850 shadow-2xs">
+              <div className="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100 shadow-2xs">
                 <Calendar className="h-5 w-5" />
               </div>
             </div>
 
             <div 
-              onMouseMove={handleMouseMove}
-              className="glow-card p-5 rounded-2xl flex items-center justify-between transition-all duration-300"
+              className="white-app-card p-5 rounded-2xl flex items-center justify-between shadow-2xs"
             >
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Contributed</span>
-                <span className="text-xl font-black text-slate-100 font-mono">₹{statsSummary.totalPaid.toLocaleString('en-IN')}</span>
+                <span className="text-xl font-black text-slate-900 font-mono">₹{statsSummary.totalPaid.toLocaleString('en-IN')}</span>
               </div>
-              <div className="h-10 w-10 bg-emerald-950/40 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-850 shadow-2xs">
+              <div className="h-10 w-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center border border-emerald-100 shadow-2xs">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
             </div>
 
             <div 
-              onMouseMove={handleMouseMove}
-              className="glow-card p-5 rounded-2xl flex items-center justify-between transition-all duration-300"
+              className="white-app-card p-5 rounded-2xl flex items-center justify-between shadow-2xs"
             >
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Projected Yield</span>
-                <span className={`text-xl font-black font-mono ${statsSummary.totalYield >= 0 ? 'text-emerald-400' : 'text-rose-455'}`}>
+                <span className={`text-xl font-black font-mono ${statsSummary.totalYield >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                   {statsSummary.totalYield >= 0 ? '+' : '-'}₹{Math.abs(statsSummary.totalYield).toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center border shadow-2xs ${statsSummary.totalYield >= 0 ? 'bg-emerald-950/40 text-emerald-400 border-emerald-850' : 'bg-rose-950/40 text-rose-455 border-rose-850'}`}>
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center border shadow-2xs ${statsSummary.totalYield >= 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                 <TrendingUp className="h-5 w-5" />
               </div>
             </div>
@@ -1093,7 +1088,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                   setShowAddForm(true);
                 }
               }}
-              className="bg-gradient-to-r from-violet-650 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-glow flex items-center gap-1.5 cursor-pointer hover:-translate-y-[1px] active:translate-y-0 animate-pulse"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
               id="btn-add-chit"
             >
               <Plus className="h-4 w-4" /> Start Chit Tracker
@@ -1102,15 +1097,15 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
           {/* Add Chit Form */}
           {showAddForm && (
-            <form onSubmit={handleAddChit} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-premium space-y-6 text-left animate-scale-in">
-              <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 border-b border-slate-800 pb-3">
-                <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                  <Landmark className="text-violet-400 h-5 w-5" /> {editingChitId ? 'Edit Chit Fund Account' : 'Start New Chit Fund Account'}
+            <form onSubmit={handleAddChit} className="white-app-card border border-slate-200 rounded-3xl p-6 shadow-md space-y-6 text-left">
+              <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 border-b border-slate-100 pb-3">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <Landmark className="text-indigo-600 h-5 w-5" /> {editingChitId ? 'Edit Chit Fund Account' : 'Start New Chit Fund Account'}
                 </h3>
                 
                 <div className="flex items-center gap-3">
                   {startDate && totalTenureMonths && !isNaN(Number(totalTenureMonths)) && (
-                    <span className="text-[10px] bg-violet-950/20 text-violet-300 border border-violet-900/40 px-3 py-1.5 rounded-lg font-mono font-bold">
+                    <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-lg font-mono font-bold">
                       Maturity: {new Date(new Date(startDate).setMonth(new Date(startDate).getMonth() + Number(totalTenureMonths))).toISOString().split('T')[0]}
                     </span>
                   )}
@@ -1126,7 +1121,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isParsingFile}
-                      className="px-3.5 py-1.5 bg-slate-950/40 hover:bg-slate-850 text-slate-400 hover:text-slate-200 border border-slate-800 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                      className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                     >
                       {isParsingFile ? 'Reading Statement...' : 'Import Statement'}
                     </button>
@@ -1136,69 +1131,69 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Chit Scheme Name</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Chit Scheme Name</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Gokulam 5 Lakh Chit"
                     value={chitName}
                     onChange={(e) => setChitName(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden font-bold text-slate-250"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none font-bold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Foreman / Company</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Foreman / Company</label>
                   <input
                     type="text"
                     placeholder="e.g. Shriram Chits"
                     value={organizer}
                     onChange={(e) => setOrganizer(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden font-semibold text-slate-250"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none font-semibold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Admission Fee (₹)</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Admission Fee (₹)</label>
                   <input
                     type="number"
                     placeholder="e.g. 500"
                     value={processingFee}
                     onChange={(e) => setProcessingFee(Number(e.target.value))}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden font-mono font-bold text-slate-250"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none font-mono font-bold text-slate-900"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Chit Value (₹)</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Chit Value (₹)</label>
                   <input
                     type="number"
                     required
                     placeholder="e.g. 500000"
                     value={totalChitValue}
                     onChange={(e) => handleChitValueChange(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden font-mono font-bold text-slate-205"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none font-mono font-bold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Total Members / Tenure (Months)</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Total Members / Tenure (Months)</label>
                   <input
                     type="number"
                     required
                     placeholder="e.g. 20"
                     value={totalTenureMonths}
                     onChange={(e) => setTotalTenureMonths(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden font-mono font-bold text-slate-205"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none font-mono font-bold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Calculated Monthly Fee (₹)</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Calculated Monthly Fee (₹)</label>
                   <input
                     type="number"
                     readOnly
                     placeholder="e.g. 25000"
                     value={monthlyContribution}
-                    className="w-full bg-slate-950/40 border border-slate-800/60 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-violet-400 cursor-not-allowed"
+                    className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-indigo-700 cursor-not-allowed"
                   />
                   {monthlyContribution && (
                     <span className="text-[10px] text-slate-500 block mt-1 font-semibold">
@@ -1210,49 +1205,49 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Foreman Commission (%)</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Foreman Commission (%)</label>
                   <input
                     type="number"
                     required
                     placeholder="5"
                     value={commissionPct}
                     onChange={(e) => setCommissionPct(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden font-mono font-semibold text-slate-255"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none font-mono font-semibold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Start Date</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Start Date</label>
                   <input
                     type="date"
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden text-slate-255"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none text-slate-900 font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Next Payment Due Date</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Next Payment Due Date</label>
                   <input
                     type="date"
                     required
                     value={nextDueDate}
                     onChange={(e) => setNextDueDate(e.target.value)}
-                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-950 outline-hidden text-slate-255"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:border-indigo-600 outline-none text-slate-900 font-semibold"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-850">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => { resetForm(); setShowAddForm(false); }}
-                  className="px-4.5 py-2 text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-850 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="px-4.5 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-violet-650 to-fuchsia-600 hover:from-violet-750 hover:to-fuchsia-750 rounded-xl transition-all cursor-pointer shadow-glow"
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors cursor-pointer shadow-xs"
                 >
                   {editingChitId ? 'Update Chit Fund' : 'Add Chit Fund'}
                 </button>
@@ -1263,7 +1258,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
           {/* Chits List Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {chits.length === 0 ? (
-              <div className="col-span-2 bg-slate-900/50 rounded-2xl border border-slate-850 p-12 text-center text-slate-500 italic shadow-premium">
+              <div className="col-span-2 bg-white rounded-3xl border border-slate-200 p-12 text-center text-slate-500 font-semibold shadow-xs">
                 No active chit funds tracked. Add chits to calculate payouts and expected yields.
               </div>
             ) : (
@@ -1292,8 +1287,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                 return (
                   <div 
                     key={chit.id} 
-                    onMouseMove={handleMouseMove}
-                    className="glow-card rounded-3xl p-6 flex flex-col justify-between shadow-premium transition-all hover:-translate-y-[2px] duration-300 text-left"
+                    className="white-app-card rounded-3xl p-6 flex flex-col justify-between shadow-xs text-left"
                   >
                     {/* Card Content Header */}
                     <div>
@@ -1302,19 +1296,19 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                           <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 font-mono">
                             {chit.organizer || 'Chit Fund'}
                           </span>
-                          <h3 className="text-base font-extrabold text-slate-200 leading-tight">
+                          <h3 className="text-base font-black text-slate-900 leading-tight">
                             {chit.chitName}
                           </h3>
                         </div>
                         
                         <div className="flex flex-col items-end gap-1.5">
-                          <span className="text-lg font-black text-slate-200 font-mono">
+                          <span className="text-lg font-black text-slate-900 font-mono">
                             ₹{Number(chit.totalChitValue).toLocaleString('en-IN')}
                           </span>
-                          <div className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md border ${
+                          <div className={`text-[9px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-md border ${
                             isMatured 
-                              ? 'text-emerald-400 bg-emerald-950/20 border-emerald-900/50' 
-                              : 'text-violet-400 bg-violet-950/20 border-violet-900/50'
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
+                              : 'text-indigo-700 bg-indigo-50 border-indigo-200'
                           }`}>
                             {isMatured ? 'Matured' : `Installment ${chit.installmentsPaid}/${chit.numberOfMembers}`}
                           </div>
@@ -1327,52 +1321,52 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                           <span>LIFETIME PROGRESS</span>
                           <span>{paidPct.toFixed(0)}% PAID</span>
                         </div>
-                        <div className="w-full bg-slate-950/60 rounded-full h-1.5 overflow-hidden border border-slate-900">
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
                           <div 
-                            className="bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-400 h-full rounded-full transition-all duration-500 shadow-glow" 
+                            className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
                             style={{ width: `${Math.min(paidPct, 100)}%` }}
                           />
                         </div>
                       </div>
 
                       {/* Info Row Key Points */}
-                      <div className="grid grid-cols-3 gap-3.5 mt-5 bg-slate-950/30 p-3.5 border border-slate-900 rounded-2xl text-[10px] leading-relaxed">
+                      <div className="grid grid-cols-3 gap-3.5 mt-5 bg-slate-50 p-3.5 border border-slate-200 rounded-2xl text-[10px] leading-relaxed">
                         <div className="space-y-0.5">
                           <span className="font-bold text-slate-500 uppercase tracking-widest block">Monthly</span>
-                          <span className="font-black text-slate-350 font-mono text-[11px]">
+                          <span className="font-black text-slate-900 font-mono text-[11px]">
                             ₹{Number(chit.monthlyContribution).toLocaleString('en-IN')}
                           </span>
                         </div>
-                        <div className="space-y-0.5 border-l border-slate-900 pl-3">
+                        <div className="space-y-0.5 border-l border-slate-200 pl-3">
                           <span className="font-bold text-slate-500 uppercase tracking-widest block">Paid / Outflow</span>
-                          <span className="font-black text-slate-350 font-mono text-[11px]">
+                          <span className="font-black text-slate-900 font-mono text-[11px]">
                             ₹{Number(chit.amountPaidTillDate || 0).toLocaleString('en-IN')}
                           </span>
                         </div>
-                        <div className="space-y-0.5 border-l border-slate-900 pl-3">
+                        <div className="space-y-0.5 border-l border-slate-200 pl-3">
                           <span className="font-bold text-slate-500 uppercase tracking-widest block">Next Due</span>
-                          <span className="font-black text-slate-350 font-mono text-[10px] block truncate">
+                          <span className="font-black text-slate-900 font-mono text-[10px] block truncate">
                             {chit.nextDueDate}
                           </span>
                         </div>
                       </div>
 
                       {/* Dynamic Yield Status Block */}
-                      <div className="grid grid-cols-2 gap-4 mt-4 bg-slate-950/20 p-3 border border-slate-900/60 rounded-2xl text-[10px]">
+                      <div className="grid grid-cols-2 gap-4 mt-4 bg-slate-50 p-3 border border-slate-200 rounded-2xl text-[10px]">
                         <div>
                           <span className="font-bold text-slate-500 uppercase tracking-widest block mb-0.5">Payout Status</span>
                           {chit.prizeTaken ? (
-                            <span className="font-extrabold text-emerald-450 flex items-center gap-1">
+                            <span className="font-extrabold text-emerald-700 flex items-center gap-1">
                               ✓ Received ₹{Number(chit.prizeAmountReceived || 0).toLocaleString('en-IN')} (M{chit.prizeTakenMonth})
                             </span>
                           ) : (
-                            <span className="font-semibold text-slate-455">Pending Bidding</span>
+                            <span className="font-semibold text-slate-600">Pending Bidding</span>
                           )}
                         </div>
                         <div>
                           <span className="font-bold text-slate-500 uppercase tracking-widest block mb-0.5">Expected Yield</span>
                           {expectedYield !== undefined ? (
-                            <span className={`font-black font-mono text-[11px] ${Number(expectedYield) >= 0 ? 'text-emerald-455' : 'text-rose-455'}`}>
+                            <span className={`font-black font-mono text-[11px] ${Number(expectedYield) >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                               {Number(expectedYield) >= 0 ? '+' : '-'}₹{Math.abs(Number(expectedYield)).toLocaleString('en-IN')}
                             </span>
                           ) : (
@@ -1383,8 +1377,8 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
                       {/* Inline Custom Transaction Log Form */}
                       {activeLogFormChitId === chit.id && (
-                        <div className="mt-4 p-4 bg-slate-955/50 border border-slate-800 rounded-2xl space-y-3 shadow-3xs animate-fade-in text-left">
-                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rapid Transaction Logger</h4>
+                        <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 shadow-2xs text-left">
+                          <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Rapid Transaction Logger</h4>
                           
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -1394,7 +1388,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                                 placeholder={chit.monthlyContribution.toString()}
                                 value={logAmount}
                                 onChange={(e) => setLogAmount(e.target.value)}
-                                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-300"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900"
                               />
                             </div>
                             <div>
@@ -1404,7 +1398,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                                 placeholder={logChitNumber}
                                 value={logChitNumber}
                                 onChange={(e) => setLogChitNumber(e.target.value)}
-                                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-300 font-mono"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 font-mono"
                               />
                             </div>
                           </div>
@@ -1415,7 +1409,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                               <select 
                                 value={logType}
                                 onChange={(e) => setLogType(e.target.value as any)}
-                                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-300"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900"
                               >
                                 <option value="Installment Paid">Installment Paid</option>
                                 <option value="Bonus">Bonus / Div</option>
@@ -1428,7 +1422,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                                 type="date"
                                 value={logDate}
                                 onChange={(e) => setLogDate(e.target.value)}
-                                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-300"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-900"
                               />
                             </div>
                           </div>
@@ -1438,18 +1432,18 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                             <select
                               value={paySourceIds[chit.id] || ''}
                               onChange={(e) => setPaySourceIds(prev => ({ ...prev, [chit.id]: e.target.value }))}
-                              className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-300"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900"
                             >
                               <option value="">-- Choose Account --</option>
                               {banks && banks.length > 0 && (
-                                <optgroup label="Bank Accounts" className="bg-slate-900">
+                                <optgroup label="Bank Accounts">
                                   {banks.map(b => (
                                     <option key={b.id} value={b.id}>{b.bankName} (₹{b.currentBalance.toLocaleString('en-IN')})</option>
                                   ))}
                                 </optgroup>
                               )}
                               {cards && cards.length > 0 && (
-                                <optgroup label="Credit Cards" className="bg-slate-900">
+                                <optgroup label="Credit Cards">
                                   {cards.map(c => (
                                     <option key={c.id} value={c.id}>{c.cardName} (Limit: ₹{c.creditLimit.toLocaleString('en-IN')})</option>
                                   ))}
@@ -1462,14 +1456,14 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                             <button
                               type="button"
                               onClick={() => setActiveLogFormChitId(null)}
-                              className="px-3 py-1 text-[10px] font-bold text-slate-450 hover:text-slate-200"
+                              className="px-3 py-1 text-[10px] font-bold text-slate-600 hover:text-slate-900"
                             >
                               Cancel
                             </button>
                             <button
                               type="button"
                               onClick={() => handleLogCustomTx(chit)}
-                              className="px-3.5 py-1 bg-violet-650 hover:bg-violet-700 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
+                              className="px-3.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
                             >
                               Confirm Payment
                             </button>
@@ -1479,11 +1473,11 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="pt-3 mt-4 border-t border-slate-850 flex flex-wrap gap-2 items-center">
+                    <div className="pt-3 mt-4 border-t border-slate-100 flex flex-wrap gap-2 items-center">
                       {!chit.prizeTaken && (
                         <button
                           onClick={() => handleClaimPrize(chit)}
-                          className="px-3.5 py-1.5 text-xs font-bold text-violet-400 bg-violet-950/40 hover:bg-violet-950 border border-violet-900/40 rounded-lg transition-all cursor-pointer shadow-3xs"
+                          className="px-3.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-all cursor-pointer"
                           title="Claim Bid Payout"
                         >
                           Claim Payout
@@ -1503,7 +1497,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                               setActiveLogFormChitId(chit.id);
                             }
                           }}
-                          className="px-3.5 py-1.5 text-xs font-bold text-slate-350 hover:text-white bg-slate-850 hover:bg-slate-800 border border-slate-800 rounded-lg transition-all cursor-pointer"
+                          className="px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-all cursor-pointer"
                         >
                           {activeLogFormChitId === chit.id ? 'Cancel Logger' : 'Log Amount'}
                         </button>
@@ -1513,7 +1507,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                         onClick={() => {
                           setViewingPastPaymentsChit(chit);
                         }}
-                        className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-200 bg-slate-950/20 border border-slate-850/50 hover:border-slate-800 rounded-lg transition-all cursor-pointer"
+                        className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-lg transition-all cursor-pointer"
                         title="View logs"
                       >
                         <History className="h-4 w-4" />
@@ -1525,25 +1519,25 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                         <button
                           onClick={() => handleSyncToCalendar(chit)}
                           disabled={syncingStates[chit.id]}
-                          className="p-1.5 hover:bg-slate-800 rounded-md text-slate-400 hover:text-violet-400 border border-slate-850/30 transition-all cursor-pointer"
+                          className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500 hover:text-indigo-600 border border-slate-200 transition-all cursor-pointer"
                           title="Sync reminders to Google Calendar"
                         >
                           {syncingStates[chit.id] ? (
-                            <span className="text-[10px] font-bold text-violet-400">Syncing...</span>
+                            <span className="text-[10px] font-bold text-indigo-600">Syncing...</span>
                           ) : (
                             <CalendarPlus className="h-4 w-4" />
                           )}
                         </button>
                         <button
                           onClick={() => handleEditClick(chit)}
-                          className="p-1.5 hover:bg-slate-800 rounded-md text-slate-450 hover:text-cyan-400 border border-slate-850/30 transition-all cursor-pointer"
+                          className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500 hover:text-indigo-600 border border-slate-200 transition-all cursor-pointer"
                           title="Edit Chit Details"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteChit(chit.id)}
-                          className="p-1.5 hover:bg-slate-850 rounded-md text-slate-450 hover:text-rose-500 border border-slate-850/30 transition-all cursor-pointer"
+                          className="p-1.5 hover:bg-slate-100 rounded-md text-slate-500 hover:text-rose-600 border border-slate-200 transition-all cursor-pointer"
                           title="Delete Tracker"
                         >
                           <Trash className="h-4 w-4" />
@@ -1560,52 +1554,52 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
       {/* Past Payments Modal */}
       {viewingPastPaymentsChit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/65 backdrop-blur-xs">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scale-in">
-            <div className="p-4.5 border-b border-slate-800/80 flex justify-between items-center bg-slate-955/50">
-              <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                <History className="h-5 w-5 text-violet-400 animate-pulse" /> Logs - {viewingPastPaymentsChit.chitName}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/25 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="p-4.5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <History className="h-5 w-5 text-indigo-600" /> Logs - {viewingPastPaymentsChit.chitName}
               </h3>
               <button 
                 onClick={() => setViewingPastPaymentsChit(null)}
-                className="text-slate-500 hover:text-slate-350 hover:bg-slate-850 p-1.5 rounded-lg transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="h-4.5 w-4.5" />
               </button>
             </div>
             
-            <div className="p-5 overflow-y-auto flex-1 bg-slate-900/60 space-y-3.5">
+            <div className="p-5 overflow-y-auto flex-1 bg-white space-y-3.5">
               {transactions.filter(t => t.chitId === viewingPastPaymentsChit.id).length === 0 ? (
-                <div className="text-center text-slate-500 text-xs py-6 font-medium italic">No past payments recorded yet.</div>
+                <div className="text-center text-slate-500 text-xs py-6 font-semibold">No past payments recorded yet.</div>
               ) : (
                 transactions
                   .filter(t => t.chitId === viewingPastPaymentsChit.id)
                   .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime())
                   .map(tx => (
-                    <div key={tx.id} className="flex justify-between items-center text-sm border border-slate-850 bg-slate-950/40 rounded-2xl p-4 shadow-3xs hover:shadow-2xs transition-shadow text-left">
+                    <div key={tx.id} className="flex justify-between items-center text-sm border border-slate-200 bg-slate-50 rounded-2xl p-4 shadow-2xs text-left">
                       <div>
-                        <div className="font-extrabold text-slate-200 font-mono">₹{Number(tx.amount).toLocaleString('en-IN')}</div>
+                        <div className="font-black text-slate-900 font-mono">₹{Number(tx.amount).toLocaleString('en-IN')}</div>
                         <div className="text-[10px] text-slate-500 font-semibold mt-1 flex items-center gap-1.5">
                           <span>{tx.transactionDate}</span>
                           {tx.chitNumber ? (
                             <>
                               <span>•</span>
-                              <span className="font-bold text-slate-400 font-mono">Chit #{tx.chitNumber}</span>
+                              <span className="font-bold text-slate-600 font-mono">Chit #{tx.chitNumber}</span>
                             </>
                           ) : ''}
                         </div>
                       </div>
                       <div className="text-right flex items-center justify-end gap-3 select-none">
-                        <div className={`text-[9px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md border ${
+                        <div className={`text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md border ${
                           tx.type === 'Prize Received' 
-                            ? 'text-emerald-400 bg-emerald-950/20 border-emerald-900/50' 
-                            : 'text-violet-400 bg-violet-950/20 border-violet-900/50'
+                            ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
+                            : 'text-indigo-700 bg-indigo-50 border-indigo-200'
                         }`}>
                           {tx.type === 'Prize Received' ? 'Prize' : 'Installment'}
                         </div>
                         <button
                           onClick={() => handleDeleteTransaction(tx, viewingPastPaymentsChit)}
-                          className="text-slate-500 hover:text-rose-500 transition-colors cursor-pointer p-1 rounded-md hover:bg-slate-850"
+                          className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer p-1 rounded-md hover:bg-slate-100"
                           title="Delete transaction"
                         >
                           <Trash className="h-4 w-4" />
@@ -1616,7 +1610,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
               )}
             </div>
             
-            <div className="p-4.5 border-t border-slate-800/80 bg-slate-955/50 flex justify-between items-center">
+            <div className="p-4.5 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
               <div className="relative">
                 <input 
                   type="file" 
@@ -1629,7 +1623,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
                   type="button"
                   onClick={() => txFileInputRef.current?.click()}
                   disabled={isParsingTx}
-                  className="px-4 py-2 bg-slate-950/40 hover:bg-slate-850 text-violet-400 border border-violet-900/40 text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-3xs"
+                  className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs"
                 >
                   {isParsingTx ? 'Parsing...' : 'Upload Statement'}
                 </button>
@@ -1637,7 +1631,7 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
 
               <button
                 onClick={() => setViewingPastPaymentsChit(null)}
-                className="px-4.5 py-2 bg-gradient-to-r from-violet-650 to-fuchsia-600 hover:from-violet-750 hover:to-fuchsia-750 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-glow"
+                className="px-4.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs"
               >
                 Close
               </button>

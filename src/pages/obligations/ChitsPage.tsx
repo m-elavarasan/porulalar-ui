@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import BorrowPanel from '../components/BorrowPanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import ChitsPanel from '../../components/ChitsPanel';
 
-export default function BorrowsPage() {
+export default function ChitsPage() {
   const { user } = useAuth();
-  const [borrows, setBorrows] = useState<any[]>([]);
+  const [chits, setChits] = useState<any[]>([]);
   const [banks, setBanks] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
 
@@ -16,16 +16,16 @@ export default function BorrowsPage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      const [borrowsList, banksList, cardsList] = await Promise.all([
-        porulalarStore.fetchCollection('borrows'),
+      const [chitsList, banksList, cardsList] = await Promise.all([
+        porulalarStore.fetchCollection('chits'),
         porulalarStore.fetchCollection('banks'),
         porulalarStore.fetchCollection('cards')
       ]);
-      setBorrows(borrowsList);
+      setChits(chitsList);
       setBanks(banksList);
       setCards(cardsList);
     } catch (err) {
-      console.error('Error loading borrows page data:', err);
+      console.error('Error loading chits page data:', err);
     } finally {
       isLoadingRef.current = false;
     }
@@ -37,18 +37,19 @@ export default function BorrowsPage() {
 
   useEffect(() => {
     loadData();
-    const unsub = porulalarStore.subscribe('borrows', debouncedLoadData);
+    const unsub = porulalarStore.subscribe('chits', debouncedLoadData);
     return () => unsub();
   }, []);
 
   if (!user) return null;
 
   return (
-    <BorrowPanel
+    <ChitsPanel
       userId={user.uid}
-      borrows={borrows}
+      chits={chits}
       banks={banks}
       cards={cards}
+      accessToken={null}
       onRefreshData={loadData}
     />
   );

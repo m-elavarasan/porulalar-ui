@@ -1,5 +1,23 @@
 import { API_BASE, getHeaders } from './config';
 
+export interface APIErrorDetail {
+  code: string;
+  message: string;
+  details?: any;
+}
+
+export class APIClientError extends Error {
+  code: string;
+  details?: any;
+
+  constructor(message: string, code: string = 'UNKNOWN_ERROR', details?: any) {
+    super(message);
+    this.name = 'APIClientError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
 async function request<T>(
   url: string,
   options: RequestInit = {}
@@ -23,13 +41,42 @@ async function request<T>(
     headers,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || errorData.message || `Request failed with status ${response.status}`);
+  const text = await response.text();
+  let result: any = null;
+  if (text) {
+    try {
+      result = JSON.parse(text);
+    } catch {
+      result = text;
+    }
   }
 
-  const text = await response.text();
-  return text ? JSON.parse(text) : ({} as T);
+  if (!response.ok || (result && typeof result === 'object' && result.success === false)) {
+    let message = `Request failed with status ${response.status}`;
+    let code = 'UNKNOWN_ERROR';
+    let details: any = undefined;
+
+    if (result && typeof result === 'object') {
+      if (typeof result.error === 'object' && result.error !== null) {
+        message = result.error.message || result.message || message;
+        code = result.error.code || code;
+        details = result.error.details;
+      } else if (typeof result.error === 'string') {
+        message = result.error;
+      } else if (result.message) {
+        message = result.message;
+      }
+    }
+
+    throw new APIClientError(message, code, details);
+  }
+
+  // Handle structured backend envelope { success: true, data: ... }
+  if (result && typeof result === 'object' && 'success' in result && 'data' in result && result.success === true) {
+    return result.data as T;
+  }
+
+  return (result ?? {}) as T;
 }
 
 export const apiClient = {
@@ -53,3 +100,4 @@ export const apiClient = {
   delete: <T>(url: string, headers?: Record<string, string>) => 
     request<T>(url, { method: 'DELETE', headers }),
 };
+

@@ -52,21 +52,24 @@ import {
 } from 'react-router-dom';
 
 // Pages
-import DashboardPage from './pages/DashboardPage';
-import ExpensesPage from './pages/ExpensesPage';
-import IncomePage from './pages/IncomePage';
-import InvestmentsPage from './pages/InvestmentsPage';
-import LoansPage from './pages/LoansPage';
-import EMIsPage from './pages/EMIsPage';
-import ChitsPage from './pages/ChitsPage';
-import AssetsGoalsPage from './pages/AssetsGoalsPage';
-import BanksPage from './pages/BanksPage';
-import CardsPage from './pages/CardsPage';
-import BorrowsPage from './pages/BorrowsPage';
-import RecurringPage from './pages/RecurringPage';
-import AIPage from './pages/AIPage';
-import SettingsPage from './pages/SettingsPage';
-import AdminPage from './pages/AdminPage';
+import {
+  DashboardPage,
+  ExpensesPage,
+  IncomePage,
+  InvestmentsPage,
+  LoansPage,
+  EMIsPage,
+  ChitsPage,
+  AssetsGoalsPage,
+  BanksPage,
+  CardsPage,
+  BorrowsPage,
+  RecurringPage,
+  AIPage,
+  SettingsPage,
+  AdminPage
+} from './pages';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 // Auth State Interfaces
 export interface AuthUser {
@@ -114,7 +117,7 @@ export default function App() {
 
   // Auth Submit credentials states
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authUsername, setAuthUsername] = useState('');
+  const [isSuperAdminPortal, setIsSuperAdminPortal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
@@ -165,26 +168,25 @@ export default function App() {
     setIsLoggingIn(true);
     try {
       if (authMode === 'login') {
-        if (!authUsername || !authPassword) {
-          throw new Error('Username and Password are required');
+        if (!authEmail || !authPassword) {
+          throw new Error('Email and Password are required');
         }
-        const result = await backendLogin(authUsername, authPassword);
+        const result = await backendLogin(authEmail, authPassword);
         setToken(result.accessToken);
         setUser(result.user);
         setNeedsAuth(false);
       } else {
-        if (!authUsername || !authEmail || !authPassword) {
-          throw new Error('Username, Email, and Password are required');
+        if (!authEmail || !authPassword) {
+          throw new Error('Email and Password are required');
         }
         if (authPassword.length < 8) {
           throw new Error('Password must be at least 8 characters long');
         }
-        const result = await backendRegister(authUsername, authEmail, authPassword);
+        const result = await backendRegister(authEmail, authPassword);
         setToken(result.accessToken);
         setUser(result.user);
         setNeedsAuth(false);
       }
-      setAuthUsername('');
       setAuthEmail('');
       setAuthPassword('');
     } catch (err: any) {
@@ -202,107 +204,116 @@ export default function App() {
       setToken(null);
       setNeedsAuth(true);
       localStorage.removeItem('porulalar_user');
+      window.location.hash = '#/login';
     } catch (err) {
       console.error('Logout error:', err);
     }
   };
 
+  const isSuperAdminRoute = window.location.hash.includes('admin-login');
+
   if (needsAuth) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 select-none" id="auth-page">
-        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-xl p-8 space-y-6 text-center">
-          <div className="mx-auto h-16 w-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-xs border border-indigo-100">
-            <Wallet className="h-8 w-8 animate-pulse" />
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white shadow-xl p-8 space-y-6 text-center">
+          <div className="mx-auto h-16 w-16 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-xs">
+            {isSuperAdminRoute ? (
+              <ShieldCheck className="h-8 w-8 text-purple-600" />
+            ) : (
+              <Wallet className="h-8 w-8 text-indigo-600" />
+            )}
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Porulalar AI</h1>
-            <p className="text-sm text-slate-500">
-              A premium, AI-powered financial supervisor. Synchronize expenses, chit auctions, EMI reminders, and bank-alerts securely.
+          <div className="space-y-1.5">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              {isSuperAdminRoute ? 'SuperAdmin Terminal' : 'Porulalar Wealth Supervisor'}
+            </h1>
+            <p className="text-xs font-semibold text-slate-500 leading-relaxed">
+              {isSuperAdminRoute
+                ? 'High-security administrative portal for system metrics and user roles.'
+                : 'Sign in to access your personal wealth workspace.'}
             </p>
           </div>
 
-          <div className="border-t border-slate-100 pt-6 space-y-4">
-            <h2 className="text-lg font-bold text-slate-700">
-              {authMode === 'login' ? 'Sign In to Your Account' : 'Register a New Account'}
+          <div className="border-t border-slate-100 pt-5 space-y-4">
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              {isSuperAdminRoute
+                ? 'Authenticate SuperAdmin'
+                : authMode === 'login'
+                ? 'Sign In to Your Account'
+                : 'Register a New Account'}
             </h2>
 
             {authError && (
-              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs text-left flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{authError}</span>
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs text-left flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-rose-600" />
+                <div>
+                  <span className="font-bold block">{authError}</span>
+                  {!isSuperAdminRoute && authMode === 'login' && (
+                    <span className="text-xs text-slate-600 block mt-1">
+                      Need an account? Click <button type="button" onClick={() => setAuthMode('register')} className="text-indigo-700 underline font-bold">Sign Up</button> to register.
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
-            <form onSubmit={handleAuthSubmit} className="space-y-3.5 text-left">
+            <form onSubmit={handleAuthSubmit} className="space-y-4 text-left">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Username</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Email Address</label>
                 <input
-                  type="text"
+                  type="email"
                   required
-                  placeholder="e.g. johndoe"
-                  value={authUsername}
-                  onChange={(e) => setAuthUsername(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-slate-800 text-sm font-semibold transition-all bg-slate-50/50 focus:bg-white"
+                  placeholder="Enter your email"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none text-slate-900 text-sm font-bold transition-all"
                 />
               </div>
 
-              {authMode === 'register' && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. john@example.com"
-                    value={authEmail}
-                    onChange={(e) => setAuthEmail(e.target.value)}
-                    className="w-full h-11 px-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-slate-800 text-sm font-semibold transition-all bg-slate-50/50 focus:bg-white"
-                  />
-                </div>
-              )}
-
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Password</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
                 <input
                   type="password"
                   required
                   placeholder="••••••••"
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-slate-800 text-sm font-semibold transition-all bg-slate-50/50 focus:bg-white"
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none text-slate-900 text-sm font-bold transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full h-11 mt-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl flex items-center justify-center font-bold text-sm transition-all shadow-md hover:shadow-lg cursor-pointer disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                className={`w-full h-12 mt-2 font-extrabold text-sm rounded-xl flex items-center justify-center transition-all shadow-md cursor-pointer disabled:opacity-50 ${
+                  isSuperAdminRoute
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+                }`}
               >
                 {isLoggingIn ? (
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-4 w-4 animate-spin" />
-                    <span>Connecting...</span>
-                  </div>
+                  <span>Verifying...</span>
                 ) : (
-                  <span>{authMode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                  <span>{isSuperAdminRoute ? 'Authorize Admin Portal' : authMode === 'login' ? 'Sign In' : 'Create Account'}</span>
                 )}
               </button>
             </form>
 
-            <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode(authMode === 'login' ? 'register' : 'login');
-                  setAuthError(null);
-                }}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
-              >
-                {authMode === 'login'
-                  ? "Don't have an account? Sign Up"
-                  : 'Already have an account? Sign In'}
-              </button>
-            </div>
+            {!isSuperAdminRoute && (
+              <div className="pt-2 text-center text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode(authMode === 'login' ? 'register' : 'login');
+                    setAuthError(null);
+                  }}
+                  className="text-indigo-600 hover:underline cursor-pointer"
+                >
+                  {authMode === 'login' ? "Need an account? Register Now" : 'Already have an account? Sign In'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -330,6 +341,7 @@ export default function App() {
             <Route path="ai-advisor" element={<AIPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="admin" element={<AdminPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>
       </HashRouter>
@@ -512,7 +524,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
         const tiltY = ((x - xc) / xc) * 7;
 
         (target as HTMLElement).style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
-        (target as HTMLElement).style.boxShadow = '0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 30px rgba(139, 92, 246, 0.15)';
+        (target as HTMLElement).style.boxShadow = '0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 0 20px rgba(99, 102, 241, 0.08)';
         (target as HTMLElement).style.zIndex = '10';
       }
     };
@@ -676,26 +688,26 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a13] text-slate-100 flex flex-col font-sans selection:bg-violet-500/30 selection:text-violet-200" id="main-app">
+    <div className="min-h-screen bg-[#f1f5f9] text-[#0f172a] flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-900" id="main-app">
       {/* Top Banner Message */}
       {schedulerMessage && (
-        <div className="bg-emerald-650 text-white py-3 px-6 text-center text-sm font-semibold flex items-center justify-center gap-2 shadow-md animate-bounce">
+        <div className="bg-emerald-600 text-white py-3 px-6 text-center text-sm font-semibold flex items-center justify-center gap-2 shadow-md animate-bounce">
           <ShieldCheck className="h-5 w-5 shrink-0" />
           {schedulerMessage}
         </div>
       )}
 
       {/* Primary Header */}
-      <header className="bg-slate-950/60 backdrop-blur-xl border-b border-slate-900 shadow-premium py-3 md:py-4 px-4 md:px-6 sticky top-0 z-45 transition-all">
+      <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs py-3 md:py-4 px-4 md:px-6 sticky top-0 z-45 transition-all text-[#0f172a]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center justify-between">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 md:h-10 md:w-10 bg-gradient-to-tr from-violet-500/10 to-cyan-500/10 text-violet-400 rounded-xl flex items-center justify-center border border-violet-500/20 shadow-glow transition-all hover:scale-110 duration-300">
-                <Wallet className="h-5 w-5 md:h-5.5 md:w-5.5 text-violet-400 animate-pulse" />
+              <div className="h-10 w-10 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-md">
+                <Wallet className="h-5.5 w-5.5 text-white" />
               </div>
               <div>
-                <h1 className="text-sm md:text-lg font-black tracking-tight leading-tight bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400">Porulalar</h1>
-                <span className="text-[9px] text-slate-500 font-mono tracking-widest block">SUPERVISOR • {user?.uid.substring(0, 8).toUpperCase()}</span>
+                <h1 className="text-base md:text-lg font-black tracking-tight leading-tight text-[#0f172a]">Porulalar Wealth</h1>
+                <span className="text-[9px] text-indigo-600 font-mono tracking-widest block font-extrabold uppercase">SUPERVISOR • {user?.uid.substring(0, 8).toUpperCase()}</span>
               </div>
             </div>
 
@@ -703,12 +715,12 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
             <div className="flex items-center gap-2 md:hidden">
               <button
                 onClick={() => setIsNotificationsOpen(true)}
-                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg border border-slate-100 bg-white relative"
+                className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 bg-white relative"
                 title="Alerts & Notifications"
               >
                 <Bell className="h-4 w-4" />
                 {alertCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                     {alertCount}
                   </span>
                 )}
@@ -716,7 +728,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
 
               <button
                 onClick={handleLogout}
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-slate-100 bg-white"
+                className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 bg-white"
                 title="Sign Out"
               >
                 <LogOut className="h-4 w-4" />
@@ -727,19 +739,19 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
           {/* GLOBAL SEARCH BAR */}
           <div className="relative flex-1 max-w-md w-full" id="global-search-container">
             <div className="relative">
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-500" />
+              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 placeholder="Search ledger, assets, goals..."
-                className="w-full bg-slate-950/40 border border-slate-800 rounded-xl pl-10 pr-10 py-2 text-xs text-slate-200 placeholder:text-slate-500 focus:bg-slate-950 focus:border-violet-500/60 focus:ring-2 focus:ring-violet-500/10 transition-all shadow-2xs font-medium"
+                className="w-full bg-slate-100/80 border border-slate-200 rounded-2xl pl-10 pr-10 py-2 text-xs text-[#0f172a] placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-xs font-semibold"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
                   title="Clear search"
                 >
                   <X className="h-4 w-4" />
@@ -755,7 +767,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                   onClick={() => setIsSearchFocused(false)} 
                 />
                 
-                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-slate-800 shadow-premium max-h-[420px] overflow-y-auto z-50 p-4 space-y-4 text-left">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-xl max-h-[420px] overflow-y-auto z-50 p-4 space-y-4 text-left">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
                       Search Results ({totalResultsCount})
@@ -777,7 +789,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                     <div className="space-y-4">
                       {searchResults.expenses.length > 0 && (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-500 uppercase tracking-widest pl-1">
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-600 uppercase tracking-widest pl-1">
                             <Receipt className="h-3.5 w-3.5" /> Expenses ({searchResults.expenses.length})
                           </div>
                           <div className="space-y-1">
@@ -791,9 +803,9 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                                 className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
                               >
                                 <div>
-                                  <div className="text-xs font-bold text-slate-200">{e.description || e.category}</div>
-                                  <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                    <span className="font-semibold text-rose-500">{e.category}</span>
+                                  <div className="text-xs font-bold text-slate-800">{e.description || e.category}</div>
+                                  <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                    <span className="font-semibold text-rose-600">{e.category}</span>
                                     <span>• {e.date}</span>
                                   </div>
                                 </div>
@@ -806,7 +818,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
 
                       {searchResults.income.length > 0 && (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500 uppercase tracking-widest pl-1">
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-widest pl-1">
                             <ArrowDownLeft className="h-3.5 w-3.5" /> Income ({searchResults.income.length})
                           </div>
                           <div className="space-y-1">
@@ -820,9 +832,9 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                                 className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
                               >
                                 <div>
-                                  <div className="text-xs font-bold text-slate-200">{i.description || i.source}</div>
-                                  <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                    <span className="font-semibold text-emerald-500">{i.source}</span>
+                                  <div className="text-xs font-bold text-slate-800">{i.description || i.source}</div>
+                                  <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                    <span className="font-semibold text-emerald-600">{i.source}</span>
                                     <span>• {i.date}</span>
                                   </div>
                                 </div>
@@ -843,33 +855,33 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
             {/* Notification Bell */}
             <button
               onClick={() => setIsNotificationsOpen(true)}
-              className="p-2 text-slate-400 hover:text-violet-400 hover:bg-slate-900/60 rounded-xl border border-slate-800 bg-slate-950/40 shadow-3xs cursor-pointer transition-all relative"
+              className="p-2.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-xs cursor-pointer transition-all relative"
               title="Alerts & Notifications"
             >
               <Bell className="h-4.5 w-4.5" />
               {alertCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                   {alertCount}
                 </span>
               )}
             </button>
 
             {/* Profile */}
-            <div className="flex items-center gap-2 bg-slate-950/50 border border-slate-800 py-1.5 px-3 rounded-xl select-none">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-xl select-none">
               {user?.photoURL ? (
                 <img src={user.photoURL} alt="avatar" className="h-5 w-5 rounded-full" />
               ) : (
-                <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-violet-650 to-cyan-500 text-white flex items-center justify-center text-[10px] font-black shadow-2xs">
-                  {user?.username?.[0]?.toUpperCase() || 'U'}
+                <div className="h-5 w-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
+                  {user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
-              <span className="text-xs font-bold text-slate-300 truncate max-w-[120px]">{user?.username || 'Active User'}</span>
+              <span className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{user?.email || 'Active User'}</span>
             </div>
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 rounded-xl border border-slate-800 bg-slate-950/40 shadow-3xs cursor-pointer transition-all"
+              className="p-2.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 bg-white shadow-xs cursor-pointer transition-all"
               title="Sign Out"
             >
               <LogOut className="h-4.5 w-4.5" />
@@ -921,7 +933,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
             return groups.map((g, idx) => (
               <React.Fragment key={idx}>
                 {g.title && (
-                  <span className="hidden lg:block text-[9px] font-extrabold text-slate-655 uppercase tracking-widest pl-4 mt-5 mb-1.5">
+                  <span className="hidden lg:block text-[9px] font-extrabold text-slate-400 uppercase tracking-widest pl-4 mt-5 mb-1.5">
                     {g.title}
                   </span>
                 )}
@@ -932,17 +944,17 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                     <button
                       key={tab.id}
                       onClick={() => handleTabClick(tab.id)}
-                      className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer shrink-0 border lg:w-full lg:justify-between lg:py-2.5 lg:px-4 lg:rounded-xl hover:-translate-y-[1px] active:translate-y-0 ${
+                      className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold rounded-full transition-all duration-200 cursor-pointer shrink-0 border lg:w-full lg:justify-between lg:py-2.5 lg:px-4 ${
                         isActive
-                          ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-premium shadow-violet-500/25 border-violet-600'
-                          : 'bg-slate-950/30 border-slate-900/60 text-slate-400 hover:bg-slate-900/60 hover:text-white'
+                          ? 'bg-indigo-600 text-white shadow-md border-indigo-600 font-black'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-indigo-600'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <IconComp className={`h-4 w-4 shrink-0 transition-transform group-hover:scale-115 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                        <IconComp className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                         <span>{tab.label}</span>
                       </div>
-                      <ChevronRight className={`hidden lg:block h-3.5 w-3.5 opacity-50 transition-transform ${isActive ? 'rotate-90 opacity-100' : ''}`} />
+                      <ChevronRight className={`hidden lg:block h-3.5 w-3.5 opacity-60 transition-transform ${isActive ? 'rotate-90 opacity-100' : ''}`} />
                     </button>
                   );
                 })}
@@ -960,15 +972,15 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
       {/* Notifications Drawer */}
       {isNotificationsOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs" onClick={() => setIsNotificationsOpen(false)} />
-          <div className="relative bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 w-full max-w-md h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
-            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between bg-slate-950/50">
-              <h3 className="font-bold text-slate-100 text-base flex items-center gap-2">
-                <Bell className="h-5 w-5 text-violet-400 animate-pulse" /> Notification Center
+          <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-xs" onClick={() => setIsNotificationsOpen(false)} />
+          <div className="relative bg-white border-l border-slate-200 w-full max-w-md h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <Bell className="h-5 w-5 text-indigo-600" /> Notification Center
               </h3>
               <button
                 onClick={() => setIsNotificationsOpen(false)}
-                className="p-1.5 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-200 cursor-pointer transition-colors"
+                className="p-1.5 hover:bg-slate-200 rounded-xl text-slate-500 hover:text-slate-800 cursor-pointer transition-colors"
               >
                 <X className="h-4.5 w-4.5" />
               </button>
@@ -976,8 +988,8 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
             
             <div className="p-5 flex-1 overflow-y-auto space-y-4">
               {notifications.length === 0 ? (
-                <div className="py-12 text-center text-slate-500">
-                  <BellOff className="h-10 w-10 mx-auto text-slate-600 mb-2" />
+                <div className="py-12 text-center text-slate-400">
+                  <BellOff className="h-10 w-10 mx-auto text-slate-400 mb-2" />
                   <p className="text-xs font-semibold">No notifications</p>
                 </div>
               ) : (
@@ -986,23 +998,23 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                   return (
                     <div
                       key={n.id}
-                      className={`p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 shadow-premium transition-all ${
+                      className={`p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 shadow-xs transition-all ${
                         n.severity === 'urgent'
-                          ? 'border-rose-950/65 bg-rose-950/20 text-rose-250'
+                          ? 'border-rose-200 bg-rose-50 text-rose-950'
                           : n.severity === 'warning'
-                          ? 'border-amber-950/65 bg-amber-950/20 text-amber-250'
-                          : 'border-violet-950/65 bg-violet-950/20 text-violet-250'
+                          ? 'border-amber-200 bg-amber-50 text-amber-950'
+                          : 'border-indigo-200 bg-indigo-50 text-indigo-950'
                       }`}
                     >
                       <div className={`h-6 w-6 rounded-full shrink-0 flex items-center justify-center ${
-                        n.severity === 'urgent' ? 'bg-rose-900/40 text-rose-400' : n.severity === 'warning' ? 'bg-amber-900/40 text-amber-400' : 'bg-violet-900/40 text-violet-400'
+                        n.severity === 'urgent' ? 'bg-rose-100 text-rose-600' : n.severity === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'
                       }`}>
                         <Icon className="h-3.5 w-3.5" />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="font-extrabold text-slate-200 block">{n.title}</span>
-                        <p className="text-slate-400 font-medium">{n.description}</p>
-                        <span className="text-[9px] text-slate-500 font-semibold block pt-1">Due: {n.date}</span>
+                        <span className="font-extrabold text-slate-900 block">{n.title}</span>
+                        <p className="text-slate-600 font-medium">{n.description}</p>
+                        <span className="text-[9px] text-slate-400 font-semibold block pt-1">Due: {n.date}</span>
                       </div>
                     </div>
                   );
@@ -1022,7 +1034,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                 setActiveQuickForm('expense');
                 setIsQuickActionOpen(false);
               }}
-              className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-lg hover:shadow-xl text-xs transition-all cursor-pointer border border-rose-500/30 hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-md text-xs transition-colors cursor-pointer border border-rose-500/30"
             >
               <Receipt className="h-4 w-4" />
               <span>Log Quick Expense</span>
@@ -1032,7 +1044,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                 setActiveQuickForm('income');
                 setIsQuickActionOpen(false);
               }}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-lg hover:shadow-xl text-xs transition-all cursor-pointer border border-emerald-500/30 hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-md text-xs transition-colors cursor-pointer border border-emerald-500/30"
             >
               <ArrowDownLeft className="h-4 w-4" />
               <span>Log Quick Income</span>
@@ -1042,10 +1054,10 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
 
         <button
           onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
-          className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-premium border transition-all cursor-pointer transform hover:scale-105 active:scale-95 ${
+          className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg border transition-colors cursor-pointer ${
             isQuickActionOpen 
-              ? 'bg-slate-900 hover:bg-slate-950 border-slate-800 rotate-45' 
-              : 'bg-gradient-to-tr from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 border-violet-500/30 shadow-glow'
+              ? 'bg-slate-800 hover:bg-slate-900 border-slate-700 rotate-45' 
+              : 'bg-indigo-600 hover:bg-indigo-700 border-indigo-500'
           }`}
           title="Quick Action Ledger"
         >
@@ -1055,27 +1067,27 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
 
       {/* Rapid Add Modal */}
       {activeQuickForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-955/65 backdrop-blur-xs animate-fade-in" id="quick-action-modal">
-          <div className="bg-slate-900 rounded-3xl border border-slate-800/80 shadow-premium max-w-lg w-full overflow-hidden animate-scale-in">
-            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between bg-slate-955/40">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-xs animate-fade-in" id="quick-action-modal">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in text-slate-900">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
               <div className="flex items-center gap-2">
                 <div className={`h-9 w-9 rounded-xl flex items-center justify-center border ${
                   activeQuickForm === 'expense' 
-                    ? 'bg-rose-950/20 border-rose-900/50 text-rose-400' 
+                    ? 'bg-rose-50 border-rose-200 text-rose-600' 
                     : activeQuickForm === 'income' 
-                    ? 'bg-emerald-950/20 border-emerald-900/50 text-emerald-400' 
-                    : 'bg-violet-950/20 border-violet-900/50 text-violet-400'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-600' 
+                    : 'bg-indigo-50 border-indigo-200 text-indigo-600'
                 }`}>
                   {activeQuickForm === 'expense' ? <Receipt className="h-5 w-5" /> : activeQuickForm === 'income' ? <ArrowDownLeft className="h-5 w-5" /> : <PiggyBank className="h-5 w-5" />}
                 </div>
                 <div className="text-left">
-                  <h3 className="font-bold text-slate-200 text-sm">Rapidly Log New {activeQuickForm === 'expense' ? 'Expense' : 'Income'}</h3>
+                  <h3 className="font-bold text-slate-900 text-sm">Rapidly Log New {activeQuickForm === 'expense' ? 'Expense' : 'Income'}</h3>
                   <p className="text-[11px] text-slate-500 font-medium">Bypasses main tabs. Saves instantly.</p>
                 </div>
               </div>
               <button
                 onClick={() => setActiveQuickForm(null)}
-                className="p-1.5 hover:bg-slate-800 rounded-xl text-slate-500 hover:text-slate-350 cursor-pointer"
+                className="p-1.5 hover:bg-slate-200 rounded-xl text-slate-500 hover:text-slate-800 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1248,6 +1260,14 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
           </div>
         </div>
       )}
+
+      {/* Mobile PWA Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeTab={location.pathname.replace('/', '') || 'dashboard'}
+        onSelectTab={(tab) => navigate(`/${tab}`)}
+        onOpenQuickAdd={() => setActiveQuickForm('expense')}
+        isSuperAdmin={user?.role === 'SuperAdmin'}
+      />
     </div>
   );
 }

@@ -36,14 +36,13 @@ export const authService = {
     return () => {};
   },
 
-  backendLogin: async (username: string, password: string): Promise<{ user: any; accessToken: string }> => {
-    const data = await apiClient.post<any>('/api/auth/login', { username, password });
+  backendLogin: async (email: string, password: string): Promise<{ user: any; accessToken: string }> => {
+    const data = await apiClient.post<any>('/api/auth/login', { email, password });
     localStorage.setItem('porulalar_access_token', data.accessToken);
     localStorage.setItem('porulalar_refresh_token', data.refreshToken);
     
     const mappedUser = {
       uid: data.user.id,
-      displayName: data.user.username,
       email: data.user.email,
       role: data.user.role
     };
@@ -51,14 +50,13 @@ export const authService = {
     return { user: mappedUser, accessToken: data.accessToken };
   },
 
-  backendRegister: async (username: string, email: string, password: string): Promise<{ user: any; accessToken: string }> => {
-    const data = await apiClient.post<any>('/api/auth/register', { username, email, password });
+  backendRegister: async (email: string, password: string): Promise<{ user: any; accessToken: string }> => {
+    const data = await apiClient.post<any>('/api/auth/register', { email, password });
     localStorage.setItem('porulalar_access_token', data.accessToken);
     localStorage.setItem('porulalar_refresh_token', data.refreshToken);
     
     const mappedUser = {
       uid: data.user.id,
-      displayName: data.user.username,
       email: data.user.email,
       role: data.user.role
     };
@@ -67,7 +65,7 @@ export const authService = {
   },
 
   googleSignIn: async (): Promise<{ user: any; accessToken: string } | null> => {
-    throw new Error('Google Sign-In is disabled. Please register or login with username/password.');
+    throw new Error('Google Sign-In is disabled. Please register or login with email/password.');
   },
 
   getAccessToken: async (): Promise<string | null> => {

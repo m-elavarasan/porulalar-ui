@@ -1,20 +1,18 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../lib/store';
-import { useAuth } from '../App';
-import { debounce } from '../lib/utils';
-import ExpensePanel from '../components/ExpensePanel';
+import { porulalarStore } from '../../lib/store';
+import { useAuth } from '../../App';
+import { debounce } from '../../lib/utils';
+import ExpensePanel from '../../components/ExpensePanel';
 
 export default function ExpensesPage() {
   const { user } = useAuth();
   
-  // Data lists
   const [expenses, setExpenses] = useState<any[]>([]);
   const [budgets, setBudgets] = useState<any[]>([]);
   const [banks, setBanks] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
 
-  // Pagination & Filter parameters
   const [page, setPage] = useState(1);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,7 +28,6 @@ export default function ExpensesPage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
-      // 1. Fetch paginated expenses from server
       const filters: Record<string, string> = {};
       if (filterCategory !== 'All') filters.category = filterCategory;
       if (searchQuery) filters.search = searchQuery;
@@ -41,7 +38,6 @@ export default function ExpensesPage() {
       setExpenses(paginatedRes.items || []);
       setTotalExpenses(paginatedRes.total || 0);
 
-      // 2. Fetch budgets, banks, cards, categories from cache store
       const [budgetsList, banksList, cardsList, catsList] = await Promise.all([
         porulalarStore.fetchCollection('budgets'),
         porulalarStore.fetchCollection('banks'),
@@ -70,7 +66,6 @@ export default function ExpensesPage() {
   useEffect(() => {
     fetchExpensesData();
 
-    // Subscribe to store updates to auto-refresh on mutations
     const unsubExpenses = porulalarStore.subscribe('expenses', debouncedFetchExpensesData);
     const unsubBudgets = porulalarStore.subscribe('budgets', debouncedFetchExpensesData);
     const unsubBanks = porulalarStore.subscribe('banks', debouncedFetchExpensesData);
@@ -84,7 +79,6 @@ export default function ExpensesPage() {
     };
   }, [page, searchQuery, filterCategory, startDateFilter, endDateFilter]);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [searchQuery, filterCategory, startDateFilter, endDateFilter]);
