@@ -401,22 +401,14 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
     if (isLoadingLayout.current) return;
     isLoadingLayout.current = true;
     try {
-      const [loansList, emisList, chitsList, banksList, cardsList, budgetsList, catsList] = await Promise.all([
-        porulalarStore.fetchCollection('loans'),
-        porulalarStore.fetchCollection('emis'),
-        porulalarStore.fetchCollection('chits'),
-        porulalarStore.fetchCollection('banks'),
-        porulalarStore.fetchCollection('cards'),
-        porulalarStore.fetchCollection('budgets'),
-        porulalarStore.fetchCollection('customCategories')
-      ]);
-      setLoans(loansList);
-      setEmis(emisList);
-      setChits(chitsList);
-      setBanks(banksList);
-      setCards(cardsList);
-      setBudgets(budgetsList);
-      setCustomCategories(catsList || []);
+      await porulalarStore.bootstrap();
+      setLoans(porulalarStore.getCache('loans'));
+      setEmis(porulalarStore.getCache('emis'));
+      setChits(porulalarStore.getCache('chits'));
+      setBanks(porulalarStore.getCache('banks'));
+      setCards(porulalarStore.getCache('cards'));
+      setBudgets(porulalarStore.getCache('budgets'));
+      setCustomCategories(porulalarStore.getCache('customCategories'));
     } catch (e) {
       console.error('Error fetching layout overview details:', e);
     } finally {
@@ -424,27 +416,21 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
     }
   };
 
-  const debouncedLoadLayoutData = useMemo(() => {
-    return debounce(loadLayoutData, 100);
-  }, []);
-
   useEffect(() => {
     if (!user) return;
     loadLayoutData();
 
-    // Subscribe to updates so notifications reflect changes immediately
-    const unsubLoans = porulalarStore.subscribe('loans', debouncedLoadLayoutData);
-    const unsubEmis = porulalarStore.subscribe('emis', debouncedLoadLayoutData);
-    const unsubChits = porulalarStore.subscribe('chits', debouncedLoadLayoutData);
-    const unsubBanks = porulalarStore.subscribe('banks', debouncedLoadLayoutData);
-    const unsubCards = porulalarStore.subscribe('cards', debouncedLoadLayoutData);
+    // Subscribe to updates without re-triggering full layout reload
+    const unsubLoans = porulalarStore.subscribe('loans', (items) => setLoans(items));
+    const unsubEmis = porulalarStore.subscribe('emis', (items) => setEmis(items));
+    const unsubChits = porulalarStore.subscribe('chits', (items) => setChits(items));
+    const unsubBanks = porulalarStore.subscribe('banks', (items) => setBanks(items));
+    const unsubCards = porulalarStore.subscribe('cards', (items) => setCards(items));
 
-    // Initial Scheduler Trigger
+    // Initial Scheduler Trigger once
     const triggerScheduler = async () => {
       try {
         await schedulerService.runScheduler();
-        setSchedulerMessage("Auto-scheduled payments synced from backend successfully!");
-        setTimeout(() => setSchedulerMessage(null), 5000);
       } catch (err) {
         console.error('Failed to run scheduler:', err);
       }
@@ -458,7 +444,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
       unsubBanks();
       unsubCards();
     };
-  }, [user]);
+  }, [user?.uid]);
 
   // Global Search trigger
   const runGlobalSearch = async () => {
@@ -505,46 +491,7 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Global mouse position tracker for hover glowing borders & 3D Tilt (CRED style)
-  useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest('.rounded-2xl, .rounded-3xl, .glow-card');
-      if (target) {
-        const rect = target.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        (target as HTMLElement).style.setProperty('--mouse-x', `${x}px`);
-        (target as HTMLElement).style.setProperty('--mouse-y', `${y}px`);
 
-        // Apply 3D tilt coordinates based on mouse hover position
-        const xc = rect.width / 2;
-        const yc = rect.height / 2;
-        const tiltX = ((yc - y) / yc) * 7;
-        const tiltY = ((x - xc) / xc) * 7;
-
-        (target as HTMLElement).style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02)`;
-        (target as HTMLElement).style.boxShadow = '0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 0 20px rgba(99, 102, 241, 0.08)';
-        (target as HTMLElement).style.zIndex = '10';
-      }
-    };
-
-    const handleGlobalMouseOut = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest('.rounded-2xl, .rounded-3xl, .glow-card');
-      if (target && !target.contains(e.relatedTarget as Node)) {
-        (target as HTMLElement).style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-        (target as HTMLElement).style.boxShadow = '';
-        (target as HTMLElement).style.zIndex = '';
-      }
-    };
-
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    window.addEventListener('mouseout', handleGlobalMouseOut);
-    return () => {
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
-      window.removeEventListener('mouseout', handleGlobalMouseOut);
-    };
-  }, []);
 
   // Notifications calculation
   const getNotifications = () => {
@@ -702,12 +649,12 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center justify-between">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="h-10 w-10 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-md">
+              <div className="h-10 w-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-xs">
                 <Wallet className="h-5.5 w-5.5 text-white" />
               </div>
               <div>
-                <h1 className="text-base md:text-lg font-black tracking-tight leading-tight text-[#0f172a]">Porulalar Wealth</h1>
-                <span className="text-[9px] text-indigo-600 font-mono tracking-widest block font-extrabold uppercase">SUPERVISOR • {user?.uid.substring(0, 8).toUpperCase()}</span>
+                <h1 className="text-base md:text-lg font-extrabold tracking-tight leading-tight text-slate-900">Porulalar Wealth</h1>
+                <span className="text-[9px] text-blue-600 font-mono tracking-wider block font-bold uppercase">SUPERVISOR • {user?.uid.substring(0, 8).toUpperCase()}</span>
               </div>
             </div>
 
@@ -944,10 +891,10 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                     <button
                       key={tab.id}
                       onClick={() => handleTabClick(tab.id)}
-                      className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold rounded-full transition-all duration-200 cursor-pointer shrink-0 border lg:w-full lg:justify-between lg:py-2.5 lg:px-4 ${
+                      className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-saas cursor-pointer shrink-0 border lg:w-full lg:justify-between lg:py-2.5 lg:px-4 ${
                         isActive
-                          ? 'bg-indigo-600 text-white shadow-md border-indigo-600 font-black'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-indigo-600'
+                          ? 'bg-blue-600 text-white shadow-xs border-blue-600 font-bold'
+                          : 'bg-white border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:text-blue-600'
                       }`}
                     >
                       <div className="flex items-center gap-2">

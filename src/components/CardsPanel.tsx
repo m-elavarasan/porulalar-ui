@@ -79,10 +79,51 @@ export default function CardsPanel({ userId, cards, banks, onRefreshData }: Card
     setShowAddForm(false);
   };
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateCardForm = () => {
+    const errors: Record<string, string> = {};
+
+    // ── MANDATORY (MANDATE) FIELDS ──
+    if (!cardName.trim()) {
+      errors.cardName = 'Card Nickname is required.';
+    }
+    if (!bankName.trim()) {
+      errors.bankName = 'Bank Name is required.';
+    }
+    if (!cardNumber || !/^\d{4}$/.test(cardNumber.trim())) {
+      errors.cardNumber = 'Card Number (Last 4) is required (4 numeric digits).';
+    }
+    if (cardType === 'Credit') {
+      if (!creditLimit || isNaN(Number(creditLimit)) || Number(creditLimit) <= 0) {
+        errors.creditLimit = 'Credit Limit (₹) is required (> 0).';
+      }
+      if (!statementDate || !statementDate.trim()) {
+        errors.statementDate = 'Statement Date (Day) is required (e.g. 15th).';
+      }
+      if (!expiryDate || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiryDate.trim())) {
+        errors.expiryDate = 'Expiry (MM/YY) is required (e.g. 12/28).';
+      }
+    }
+    if (!status) {
+      errors.status = 'Status is required.';
+    }
+
+    // ── NON-MANDATORY (OPTIONAL) FIELDS ──
+    if (currentOutstanding && (isNaN(Number(currentOutstanding)) || Number(currentOutstanding) < 0)) {
+      errors.currentOutstanding = 'Current Outstanding must be a valid number.';
+    }
+    if (statementBalance && (isNaN(Number(statementBalance)) || Number(statementBalance) < 0)) {
+      errors.statementBalance = 'Generated Bill Amount must be a valid number.';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleAddCard = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cardName || !cardNumber || !bankName) {
-      await showAlert('Please fill all required fields.', 'Error', 'error');
+    if (!validateCardForm()) {
       return;
     }
 
@@ -94,9 +135,9 @@ export default function CardsPanel({ userId, cards, banks, onRefreshData }: Card
         cardNumber,
         expiryDate,
         bankName,
-        creditLimit: creditLimit ? Number(creditLimit) : undefined,
-        currentOutstanding: currentOutstanding ? Number(currentOutstanding) : undefined,
-        statementBalance: statementBalance ? Number(statementBalance) : undefined,
+        creditLimit: creditLimit ? Number(creditLimit) : 0,
+        currentOutstanding: currentOutstanding ? Number(currentOutstanding) : 0,
+        statementBalance: statementBalance ? Number(statementBalance) : 0,
         statementDate,
         dueDate,
         status,
@@ -234,97 +275,174 @@ export default function CardsPanel({ userId, cards, banks, onRefreshData }: Card
           <h2 className="text-sm font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">{editingCardId ? "Edit Card" : "Add New Card"}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Card Nickname</label>
-              <input type="text" required value={cardName} onChange={e => setCardName(e.target.value)} placeholder="e.g. Amazon ICICI" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+              <label className="block text-xs font-bold text-slate-700 mb-1">Card Nickname <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={cardName}
+                onChange={e => { setCardName(e.target.value); setFormErrors(prev => ({ ...prev, cardName: '' })); }}
+                placeholder="e.g. Amazon ICICI"
+                className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                  formErrors.cardName ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                }`}
+              />
+              {formErrors.cardName && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.cardName}</span>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Bank Name</label>
-              <input type="text" required value={bankName} onChange={e => setBankName(e.target.value)} placeholder="e.g. ICICI Bank" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+              <label className="block text-xs font-bold text-slate-700 mb-1">Bank Name <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={bankName}
+                onChange={e => { setBankName(e.target.value); setFormErrors(prev => ({ ...prev, bankName: '' })); }}
+                placeholder="e.g. ICICI Bank"
+                className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                  formErrors.bankName ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                }`}
+              />
+              {formErrors.bankName && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.bankName}</span>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Card Type</label>
-              <select value={cardType} onChange={e => setCardType(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20">
+              <label className="block text-xs font-bold text-slate-700 mb-1">Card Type <span className="text-rose-500">*</span></label>
+              <select value={cardType} onChange={e => setCardType(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/20">
                 <option value="Credit">Credit Card</option>
                 <option value="Debit">Debit Card</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Card Number (Last 4)</label>
-              <input type="text" required maxLength={4} value={cardNumber} onChange={e => setCardNumber(e.target.value)} placeholder="e.g. 1234" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+              <label className="block text-xs font-bold text-slate-700 mb-1">Card Number (Last 4) <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                maxLength={4}
+                value={cardNumber}
+                onChange={e => { setCardNumber(e.target.value); setFormErrors(prev => ({ ...prev, cardNumber: '' })); }}
+                placeholder="e.g. 1234"
+                className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                  formErrors.cardNumber ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                }`}
+              />
+              {formErrors.cardNumber && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.cardNumber}</span>}
             </div>
             
             {cardType === 'Credit' && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Credit Limit (₹)</label>
-                  <input type="number" value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="e.g. 100000" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Credit Limit (₹) <span className="text-rose-500">*</span></label>
+                  <input
+                    type="number"
+                    value={creditLimit}
+                    onChange={e => { setCreditLimit(e.target.value); setFormErrors(prev => ({ ...prev, creditLimit: '' })); }}
+                    placeholder="e.g. 100000"
+                    className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                      formErrors.creditLimit ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                    }`}
+                  />
+                  {formErrors.creditLimit && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.creditLimit}</span>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Current Outstanding (₹)</label>
-                  <input type="number" value={currentOutstanding} onChange={e => setCurrentOutstanding(e.target.value)} placeholder="e.g. 15000" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Statement Date (Day) <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    value={statementDate}
+                    onChange={e => { setStatementDate(e.target.value); setFormErrors(prev => ({ ...prev, statementDate: '' })); }}
+                    placeholder="e.g. 15th"
+                    className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                      formErrors.statementDate ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                    }`}
+                  />
+                  {formErrors.statementDate && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.statementDate}</span>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Generated Bill Amount</label>
-                  <input type="number" value={statementBalance} onChange={e => setStatementBalance(e.target.value)} placeholder="0" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Current Outstanding (₹) <span className="text-slate-400 font-normal">(Optional)</span></label>
+                  <input
+                    type="number"
+                    value={currentOutstanding}
+                    onChange={e => { setCurrentOutstanding(e.target.value); setFormErrors(prev => ({ ...prev, currentOutstanding: '' })); }}
+                    placeholder="e.g. 15000"
+                    className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                      formErrors.currentOutstanding ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                    }`}
+                  />
+                  {formErrors.currentOutstanding && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.currentOutstanding}</span>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Statement Date (Day)</label>
-                  <input type="text" value={statementDate} onChange={e => setStatementDate(e.target.value)} placeholder="e.g. 15th" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Generated Bill Amount <span className="text-slate-400 font-normal">(Optional)</span></label>
+                  <input
+                    type="number"
+                    value={statementBalance}
+                    onChange={e => { setStatementBalance(e.target.value); setFormErrors(prev => ({ ...prev, statementBalance: '' })); }}
+                    placeholder="0"
+                    className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                      formErrors.statementBalance ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                    }`}
+                  />
+                  {formErrors.statementBalance && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.statementBalance}</span>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Due Date</label>
-                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
-                </div>
-                <div className="col-span-full mt-2 pt-4 border-t border-slate-100">
-                  <div className="flex items-center gap-2 mb-3">
-                    <input
-                      type="checkbox"
-                      id="cardAutoPay"
-                      checked={autoPay}
-                      onChange={(e) => setAutoPay(e.target.checked)}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-                    />
-                    <label htmlFor="cardAutoPay" className="text-xs font-semibold text-slate-700 cursor-pointer">
-                      Enable Auto Pay (auto-deduct on Due Date)
-                    </label>
-                  </div>
-                  {autoPay && (
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Select Bank Account for Auto Debit</label>
-                      <select
-                        value={autoPaySourceId}
-                        onChange={(e) => setAutoPaySourceId(e.target.value)}
-                        required={autoPay}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"
-                      >
-                        <option value="">-- Select Bank Account --</option>
-                        {banks && banks.length > 0 && (
-                          <optgroup label="Bank Accounts">
-                            {banks.map(b => (
-                              <option key={b.id} value={b.id}>{b.bankName}</option>
-                            ))}
-                          </optgroup>
-                        )}
-                      </select>
-                    </div>
-                  )}
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Next Due Date <span className="text-slate-400 font-normal">(Optional)</span></label>
+                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/20" />
                 </div>
               </>
             )}
-            
+
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Expiry (MM/YY)</label>
-              <input type="text" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} placeholder="e.g. 12/28" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20" />
+              <label className="block text-xs font-bold text-slate-700 mb-1">Expiry (MM/YY) <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                value={expiryDate}
+                onChange={e => { setExpiryDate(e.target.value); setFormErrors(prev => ({ ...prev, expiryDate: '' })); }}
+                placeholder="e.g. 12/28"
+                className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-sm focus:outline-hidden transition-all ${
+                  formErrors.expiryDate ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20' : 'border-slate-200 focus:ring-2 focus:ring-blue-500/20'
+                }`}
+              />
+              {formErrors.expiryDate && <span className="text-[11px] font-semibold text-rose-600 mt-1 block">⚠️ {formErrors.expiryDate}</span>}
             </div>
-            
+
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-500/20">
+              <label className="block text-xs font-bold text-slate-700 mb-1">Status <span className="text-rose-500">*</span></label>
+              <select value={status} onChange={e => setStatus(e.target.value as any)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500/20">
                 <option value="Active">Active</option>
                 <option value="Blocked">Blocked</option>
                 <option value="Closed">Closed</option>
               </select>
             </div>
+
+            {cardType === 'Credit' && (
+              <div className="col-span-full mt-2 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="cardAutoPay"
+                    checked={autoPay}
+                    onChange={(e) => setAutoPay(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                  />
+                  <label htmlFor="cardAutoPay" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                    Enable Auto Pay (auto-deduct on Due Date) <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                </div>
+                {autoPay && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Select Bank Account for Auto Debit</label>
+                    <select
+                      value={autoPaySourceId}
+                      onChange={(e) => setAutoPaySourceId(e.target.value)}
+                      required={autoPay}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                    >
+                      <option value="">-- Select Bank Account --</option>
+                      {banks && banks.length > 0 && (
+                        <optgroup label="Bank Accounts">
+                          {banks.map(b => (
+                            <option key={b.id} value={b.id}>{b.bankName}</option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+            
           </div>
           
           <div className="flex items-center justify-end pt-2 gap-2">

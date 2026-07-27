@@ -203,6 +203,9 @@ export interface Card {
   createdAt: string;
 }
 
+export type BankAccount = Bank;
+export type CreditCard = Card;
+
 export interface Borrow {
   id: string;
   userId: string;

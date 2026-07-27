@@ -10,11 +10,23 @@ import {
   X,
   CreditCard,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  Sparkles,
+  TrendingUp,
+  ShieldAlert,
+  PlusCircle,
+  Clock,
+  Landmark,
+  ShieldCheck,
+  ChevronRight,
+  Bell
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { CreditHealthCard } from '../../components/CreditHealthCard';
-import { CardStack } from '../../components/CardStack';
+import { BankCard } from '../../components/BankCard';
+import { CreditCard3D } from '../../components/CreditCard3D';
+import { InvestmentCard } from '../../components/InvestmentCard';
+import { MetricCard } from '../../components/MetricCard';
+import { QuickActionModal } from '../../components/QuickActionModal';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -27,12 +39,9 @@ export default function DashboardPage() {
   const [banks, setBanks] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
-
-  const [breakdownModal, setBreakdownModal] = useState<{
-    title: string;
-    items: { label: string; amount?: number; value?: string | number }[];
-    total?: number;
-  } | null>(null);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [assets, setAssets] = useState<any[]>([]);
+  const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
 
   const isLoadingRef = useRef(false);
 
@@ -40,31 +49,18 @@ export default function DashboardPage() {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
     try {
+      await porulalarStore.bootstrap();
       const data = await dashboardService.getStats();
       setStats(data);
 
-      const [
-        loansList,
-        chitsList,
-        budgetsList,
-        banksList,
-        cardsList,
-        expensesList
-      ] = await Promise.all([
-        porulalarStore.fetchCollection('loans'),
-        porulalarStore.fetchCollection('chits'),
-        porulalarStore.fetchCollection('budgets'),
-        porulalarStore.fetchCollection('banks'),
-        porulalarStore.fetchCollection('cards'),
-        porulalarStore.fetchCollection('expenses')
-      ]);
-
-      setLoans(loansList);
-      setChits(chitsList);
-      setBudgets(budgetsList);
-      setBanks(banksList);
-      setCards(cardsList);
-      setExpenses(expensesList);
+      setLoans(porulalarStore.getCache('loans'));
+      setChits(porulalarStore.getCache('chits'));
+      setBudgets(porulalarStore.getCache('budgets'));
+      setBanks(porulalarStore.getCache('banks'));
+      setCards(porulalarStore.getCache('cards'));
+      setExpenses(porulalarStore.getCache('expenses'));
+      setInvestments(porulalarStore.getCache('investments'));
+      setAssets(porulalarStore.getCache('assets'));
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
@@ -72,13 +68,11 @@ export default function DashboardPage() {
     }
   };
 
-  const debouncedFetchData = useMemo(() => debounce(fetchDashboardData, 100), []);
-
   useEffect(() => {
     fetchDashboardData();
-    const unsubExpenses = porulalarStore.subscribe('expenses', debouncedFetchData);
-    const unsubBanks = porulalarStore.subscribe('banks', debouncedFetchData);
-    const unsubCards = porulalarStore.subscribe('cards', debouncedFetchData);
+    const unsubExpenses = porulalarStore.subscribe('expenses', (data) => setExpenses(data));
+    const unsubBanks = porulalarStore.subscribe('banks', (data) => setBanks(data));
+    const unsubCards = porulalarStore.subscribe('cards', (data) => setCards(data));
     return () => {
       unsubExpenses();
       unsubBanks();
@@ -87,290 +81,295 @@ export default function DashboardPage() {
   }, []);
 
   const netWorth = stats?.netWorth || 0;
-  const totalBankBalance = banks.reduce((sum, b) => sum + (b.currentBalance || 0), 0);
+  const netWorthChangePct = stats?.netWorthChangePct ?? 0;
+  const totalBankBalance = banks.reduce((sum, b) => sum + (b.balance || b.currentBalance || 0), 0);
+  const totalInvestments = investments.reduce((sum, i) => sum + (i.currentValue || i.amount || 0), 0);
   const totalDebt = loans.reduce((sum, l) => sum + (l.principalOutstanding ?? l.borrowedAmount ?? 0), 0) +
-                    cards.reduce((sum, c) => sum + (c.currentOutstanding || 0), 0);
+                    cards.reduce((sum, c) => sum + (c.currentOutstanding || c.balance || 0), 0);
+  
   const monthlyExpenses = stats?.expenses?.thisMonth || 0;
-  const savingsRate = stats?.savings?.savingsRate || 0;
-  const projectedExpense = budgets.reduce((sum, b) => sum + (b.limit || 0), 0);
+  const healthScore = stats?.healthScore || 85;
   const userName = user?.email?.split('@')[0] || 'User';
 
+  const handleSelectQuickAction = (actionType: string) => {
+    switch (actionType) {
+      case 'PAY_CC_BILL': navigate('/cards'); break;
+      case 'PAY_EMI': navigate('/emis'); break;
+      case 'RECORD_INCOME': navigate('/income'); break;
+      case 'ADD_INVESTMENT': navigate('/investments'); break;
+      case 'TRANSFER_MONEY': navigate('/banks'); break;
+      case 'ADD_ASSET': navigate('/assets'); break;
+      case 'ADD_CREDIT_CARD': navigate('/cards'); break;
+      default: navigate('/cards');
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-20 select-none">
-      {/* TOP HERO GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* CARD 1: Portfolio Balance Card */}
-        <div className="bg-gradient-to-br from-indigo-50 to-slate-100 rounded-3xl p-6 border border-indigo-100/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">Active Session</span>
-                <h2 className="text-xl font-black text-slate-900 mt-0.5">
-                  Welcome, <span className="capitalize">{userName}</span> 👋
-                </h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">Porulalar Wealth Supervisor</p>
-              </div>
-              <button
-                onClick={() => navigate('/cards')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-800 text-xs font-bold shadow-2xs hover:bg-slate-50 cursor-pointer transition-all"
-              >
-                <CreditCard className="h-3.5 w-3.5 text-indigo-600" />
-                Cards
-              </button>
+    <div className="space-y-6 pb-24 select-none px-1">
+      {/* ── NATIVE MOBILE APP EXPERIENCE (Visible only on mobile devices) ── */}
+      <div className="block md:hidden space-y-4">
+        {/* Native Compact Greeting & App Header */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+              {userName[0]?.toUpperCase() || 'U'}
             </div>
-
-            <div className="my-5">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">Current Net Worth</span>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight font-mono mt-1">
-                ₹{netWorth.toLocaleString('en-IN')}<span className="text-2xl font-bold text-slate-400">.00</span>
-              </h1>
-              <p className="text-xs text-slate-600 font-semibold mt-2">
-                Liquid: <strong className="text-emerald-700 font-mono">₹{totalBankBalance.toLocaleString('en-IN')}</strong> • Debt: <strong className="text-rose-600 font-mono">₹{totalDebt.toLocaleString('en-IN')}</strong>
-              </p>
+            <div>
+              <h2 className="font-bold text-slate-900 text-sm leading-tight">Welcome, {userName} 👋</h2>
+              <span className="text-[10px] text-slate-500 font-medium">Porulalar Wealth App</span>
             </div>
           </div>
 
-          {/* Quick Action Pill Grid */}
-          <div className="grid grid-cols-2 gap-2.5 pt-2">
-            <button
-              onClick={() => navigate('/expenses')}
-              className="flex items-center gap-2 p-3 rounded-2xl bg-white border border-slate-200 hover:border-indigo-500 transition-all shadow-2xs cursor-pointer text-left"
-            >
-              <div className="h-8 w-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
-              </div>
-              <div>
-                <div className="text-xs font-black text-slate-900">Spend</div>
-                <div className="text-[10px] text-slate-500 font-medium">Log Expense</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => navigate('/income')}
-              className="flex items-center gap-2 p-3 rounded-2xl bg-white border border-slate-200 hover:border-indigo-500 transition-all shadow-2xs cursor-pointer text-left"
-            >
-              <div className="h-8 w-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <ArrowDownLeft className="h-4 w-4 stroke-[2.5]" />
-              </div>
-              <div>
-                <div className="text-xs font-black text-slate-900">Deposit</div>
-                <div className="text-[10px] text-slate-500 font-medium">Add Income</div>
-              </div>
-            </button>
-          </div>
+          <button
+            onClick={() => setIsQuickActionOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs flex items-center gap-1"
+          >
+            <PlusCircle size={14} />
+            <span>Action</span>
+          </button>
         </div>
 
-        {/* CARD 2: Credit Health Card */}
-        <CreditHealthCard
-          score={785}
-          maxScore={900}
-          status="Excellent"
-          netWorth={netWorth}
-          savingsRate={savingsRate}
-        />
+        {/* Native Mobile Hero Balance Card */}
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-5 rounded-3xl shadow-xl relative overflow-hidden space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Net Worth</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30">
+              Score: {healthScore}/100 Excellent
+            </span>
+          </div>
 
-        {/* CARD 3: Metallic Cards Carousel */}
-        <CardStack
-          cards={cards.map((c, i) => ({
-            id: c.id || `card-${i}`,
-            cardName: c.cardName || 'Credit Card',
-            bankName: c.bankName || 'Bank',
-            cardNumber: c.cardNumber || '•••• •••• •••• 8890',
-            cardHolder: c.cardHolder || user?.email?.split('@')[0] || 'VIP Member',
-            expiry: c.expiry || '08/28',
-            balance: c.currentOutstanding || c.balance || 0,
-            limit: c.creditLimit || 250000,
-            type: (i % 2 === 0 ? 'platinum' : 'infinite') as any
-          }))}
-          onAddCard={() => navigate('/cards')}
-        />
-      </div>
-
-      {/* CORE DASHBOARD GRIDS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* GRID 1: Budget Overview */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                <PiggyBank className="h-5 w-5 text-indigo-600" />
-                Budget Overview
-              </h3>
-              <button
-                onClick={() => navigate('/expenses')}
-                className="text-xs font-extrabold text-indigo-600 hover:underline cursor-pointer"
-              >
-                Manage Caps
-              </button>
-            </div>
-
-            {budgets.length === 0 ? (
-              <div className="py-8 text-center text-slate-500 space-y-2">
-                <p className="text-xs font-semibold">No active monthly budgets defined.</p>
-                <button
-                  onClick={() => navigate('/expenses')}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-colors"
-                >
-                  Create Monthly Budget
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {budgets.slice(0, 4).map((b) => {
-                  const spent = expenses
-                    .filter((e) => e.category === b.category)
-                    .reduce((sum, e) => sum + (e.amount || 0), 0);
-                  const pct = Math.min(100, Math.round((spent / (b.limit || 1)) * 100));
-
-                  return (
-                    <div key={b.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                      <div className="flex justify-between items-center text-xs font-bold text-slate-900">
-                        <span>{b.category}</span>
-                        <span className="font-mono text-slate-600">₹{spent.toLocaleString()} / ₹{b.limit.toLocaleString()}</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${pct > 90 ? 'bg-rose-500' : 'bg-indigo-600'}`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+              ₹{netWorth.toLocaleString('en-IN')}<span className="text-lg text-slate-400 font-semibold">.00</span>
+            </h1>
+            {netWorthChangePct !== 0 && (
+              <span className="text-xs font-semibold text-emerald-400 block mt-1">
+                {netWorthChangePct >= 0 ? '+' : ''}{netWorthChangePct.toFixed(1)}% this month
+              </span>
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs font-semibold text-slate-500">
-            <span>Projected Monthly Spend</span>
-            <span className="font-mono font-black text-sm text-slate-900">₹{projectedExpense.toLocaleString()}</span>
+          <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+            <span>Available Cash: <strong className="text-white">₹{totalBankBalance.toLocaleString('en-IN')}</strong></span>
+            <span>Total Debt: <strong className="text-rose-300">₹{totalDebt.toLocaleString('en-IN')}</strong></span>
           </div>
         </div>
 
-        {/* GRID 2: Recent Transactions */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-indigo-600" />
-                Recent Transactions
-              </h3>
-              <button
-                onClick={() => navigate('/expenses')}
-                className="text-xs font-extrabold text-indigo-600 hover:underline cursor-pointer"
-              >
-                View All →
-              </button>
-            </div>
-
-            {expenses.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-xs font-semibold">
-                No recent transactions recorded.
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {expenses.slice(0, 4).map((e) => (
-                  <div key={e.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-bold text-slate-900 block">{e.description || e.category}</span>
-                      <span className="text-[11px] text-slate-500 font-medium">{e.category} • {e.date}</span>
-                    </div>
-                    <span className="font-mono font-black text-rose-600 text-sm">-₹{e.amount?.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Horizontal Swipeable Bank Accounts Carousel for Native Mobile */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Bank Accounts</span>
+            <button onClick={() => navigate('/banks')} className="text-[11px] font-semibold text-blue-600 font-sans">View All →</button>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500 font-semibold">
-            <span>This Month Spent:</span>
-            <strong className="text-slate-900 font-mono text-sm font-black">₹{monthlyExpenses.toLocaleString()}</strong>
-          </div>
-        </div>
-
-        {/* GRID 3: Linked Bank Accounts */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-indigo-600" />
-                Linked Bank Accounts
-              </h3>
-              <button
-                onClick={() => navigate('/banks')}
-                className="text-xs font-extrabold text-indigo-600 hover:underline cursor-pointer"
-              >
-                Manage
-              </button>
-            </div>
-
-            {banks.length === 0 ? (
-              <div className="py-8 text-center text-slate-500 space-y-2">
-                <p className="text-xs font-semibold">No bank accounts linked yet.</p>
-                <button
-                  onClick={() => navigate('/banks')}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-colors"
-                >
-                  Link Bank Account
-                </button>
+          <div className="flex overflow-x-auto gap-3.5 snap-x snap-mandatory scrollbar-none pb-2 pt-1 px-1">
+            {banks.map((b) => (
+              <div key={b.id || b.name} className="min-w-[280px] snap-center">
+                <BankCard bank={b} onTransfer={() => navigate('/banks')} />
               </div>
-            ) : (
-              <div className="space-y-3">
-                {banks.slice(0, 4).map((b) => (
-                  <div key={b.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs text-slate-900">
-                    <div>
-                      <span className="font-bold block">{b.bankName}</span>
-                      <span className="text-[11px] text-slate-500 font-medium">{b.accountType}</span>
-                    </div>
-                    <span className="font-mono font-black text-sm text-slate-900">₹{b.currentBalance?.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs font-semibold text-slate-500">
-            <span>Total Liquid Capital:</span>
-            <span className="font-mono font-black text-sm text-slate-900">₹{totalBankBalance.toLocaleString()}</span>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Breakdown Modal */}
-      {breakdownModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/25 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-slate-200 text-slate-900">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-black text-slate-900">{breakdownModal.title}</h3>
-              <button onClick={() => setBreakdownModal(null)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
+      {/* ── DESKTOP DASHBOARD EXPERIENCE (Visible on tablet & desktop) ── */}
+      <div className="hidden md:block space-y-6">
+        {/* Top Hero Summary Card */}
+        <div className="saas-card-lg p-6 lg:p-7 bg-white border border-slate-200/90 shadow-xs relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-teal-100/30 via-emerald-50/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 font-medium">
+                  Welcome back, <strong className="text-slate-900 capitalize font-bold">{userName}</strong> 👋
+                </span>
+              </div>
+
+              <div>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Current Net Worth</span>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight font-sans mt-0.5">
+                  ₹{netWorth.toLocaleString('en-IN')}<span className="text-xl text-slate-400 font-semibold">.00</span>
+                </h1>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+                {netWorthChangePct !== 0 && (
+                  <span className={`inline-flex items-center gap-1 font-semibold px-2.5 py-1 rounded-lg border ${netWorthChangePct >= 0 ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60'}`}>
+                    <TrendingUp size={14} /> {netWorthChangePct >= 0 ? '+' : ''}{netWorthChangePct.toFixed(1)}% this month
+                  </span>
+                )}
+                <span className="text-slate-600 font-medium">
+                  Liquid Cash: <strong className="text-slate-900 font-bold">₹{totalBankBalance.toLocaleString('en-IN')}</strong>
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-              {breakdownModal.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-                  <span className="font-bold text-slate-700">{item.label}</span>
-                  {item.amount !== undefined ? (
-                    <span className={`font-mono font-bold ${item.amount < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                      ₹{item.amount.toLocaleString()}
-                    </span>
-                  ) : (
-                    <span className="font-bold text-slate-900">{item.value}</span>
-                  )}
+            {/* Health Score Gauge & Quick Actions */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-4 lg:pt-0 lg:pl-6">
+              <div className="bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80 flex items-center gap-3.5">
+                <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-slate-200"
+                      strokeWidth="3.5"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-emerald-600"
+                      strokeDasharray={`${healthScore}, 100`}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <span className="absolute font-extrabold text-xs text-slate-900">{healthScore}</span>
                 </div>
-              ))}
-            </div>
-
-            {breakdownModal.total !== undefined && (
-              <div className="pt-3 border-t border-slate-100 flex justify-between items-center font-bold text-sm">
-                <span>Total Amount:</span>
-                <span className="font-mono text-base text-slate-900 font-black">₹{breakdownModal.total.toLocaleString()}</span>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Financial Health</span>
+                  <span className="text-xs font-extrabold text-emerald-700 block">Excellent</span>
+                  <span className="text-[10px] text-slate-500">Top 5% financial stability</span>
+                </div>
               </div>
-            )}
+
+              <button
+                onClick={() => setIsQuickActionOpen(true)}
+                className="px-4 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-saas flex items-center justify-center gap-2 shrink-0"
+              >
+                <PlusCircle size={16} />
+                <span>Quick Action</span>
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* ── METRICS GRID ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          title="Liquid Cash"
+          value={totalBankBalance}
+          subtitle={`${banks.length} Bank Accounts`}
+          icon={<Building2 size={18} />}
+          onClick={() => navigate('/banks')}
+        />
+        <MetricCard
+          title="Investments"
+          value={totalInvestments}
+          subtitle={`${investments.length} Active Investments`}
+          icon={<Landmark size={18} />}
+          onClick={() => navigate('/investments')}
+        />
+        <MetricCard
+          title="Total Liabilities"
+          value={totalDebt}
+          subtitle={`${loans.length + cards.length} Active Liabilities`}
+          icon={<ShieldAlert size={18} />}
+          onClick={() => navigate('/loans')}
+        />
+        <MetricCard
+          title="Monthly Outflow"
+          value={monthlyExpenses}
+          subtitle="Automated payment ledger"
+          icon={<Activity size={18} />}
+          onClick={() => navigate('/expenses')}
+        />
+      </div>
+
+      {/* ── LINKED BANKS SECTION ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+            <Building2 size={18} className="text-blue-600" />
+            <span>Bank Accounts & Liquidity</span>
+          </h2>
+          <button onClick={() => navigate('/banks')} className="text-xs font-semibold text-blue-600 hover:underline">
+            Manage ({banks.length}) →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {banks.length === 0 ? (
+            <div className="col-span-full saas-card p-6 text-center space-y-2">
+              <p className="text-xs font-semibold text-slate-600">No bank accounts linked yet.</p>
+              <button onClick={() => navigate('/banks')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-saas">
+                Link Bank Account
+              </button>
+            </div>
+          ) : (
+            banks.slice(0, 3).map((b) => (
+              <BankCard key={b.id || b.name} bank={b} onTransfer={() => navigate('/banks')} />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── CREDIT CARDS SECTION ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+            <CreditCard size={18} className="text-indigo-600" />
+            <span>Credit Cards & Utilization</span>
+          </h2>
+          <button onClick={() => navigate('/cards')} className="text-xs font-semibold text-blue-600 hover:underline">
+            View All ({cards.length}) →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {cards.length === 0 ? (
+            <div className="col-span-full saas-card p-6 text-center space-y-2">
+              <p className="text-xs font-semibold text-slate-600">No credit cards added.</p>
+              <button onClick={() => navigate('/cards')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-saas">
+                Add Credit Card
+              </button>
+            </div>
+          ) : (
+            cards.slice(0, 3).map((c) => (
+              <CreditCard3D key={c.id || c.name} card={c} onPayBill={() => navigate('/cards')} />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── AI INSIGHTS RECOMMENDATION CARDS ── */}
+      <div className="saas-card p-5 sm:p-6 bg-slate-900 text-white space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} className="text-amber-400" />
+            <h3 className="font-bold text-xs sm:text-sm tracking-wide">Porulalar AI Advisor Insights</h3>
+          </div>
+          <button onClick={() => navigate('/ai')} className="text-xs font-semibold text-amber-300 hover:underline">
+            Open AI Chat →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="bg-white/10 rounded-2xl p-3.5 border border-white/10 space-y-1">
+            <span className="text-[10px] uppercase font-bold text-amber-300 tracking-wider">Credit Optimization</span>
+            <p className="text-xs font-medium leading-relaxed">Credit utilization on Axis Magnus reached 42%. Pay outstanding before due date to keep your score in top tier.</p>
+          </div>
+          <div className="bg-white/10 rounded-2xl p-3.5 border border-white/10 space-y-1">
+            <span className="text-[10px] uppercase font-bold text-emerald-300 tracking-wider">Wealth Acceleration</span>
+            <p className="text-xs font-medium leading-relaxed">Increase Nifty 50 Index SIP to hit your ₹50L Retirement Goal 1.8 years earlier.</p>
+          </div>
+          <div className="bg-white/10 rounded-2xl p-3.5 border border-white/10 space-y-1">
+            <span className="text-[10px] uppercase font-bold text-sky-300 tracking-wider">Interest Savings</span>
+            <p className="text-xs font-medium leading-relaxed">Prepaying towards Personal Loan will save substantial interest over tenure.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Action Modal */}
+      <QuickActionModal
+        isOpen={isQuickActionOpen}
+        onClose={() => setIsQuickActionOpen(false)}
+        onSelectAction={handleSelectQuickAction}
+      />
     </div>
   );
 }

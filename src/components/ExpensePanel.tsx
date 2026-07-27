@@ -386,20 +386,17 @@ export default function ExpensePanel({
   return (
     <div className="space-y-6">
       {/* Top action row */}
-      <div className="flex gap-3 justify-end">
-        <button
-          onClick={() => setShowAddExpense(!showAddExpense)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-          id="btn-add-expense"
-        >
-          <Plus className="h-4.5 w-4.5" /> Log Expense
-        </button>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+        <div className="flex items-center gap-2 text-slate-700 text-xs font-semibold">
+          <Sparkles className="h-4 w-4 text-blue-600 shrink-0" />
+          <span>Expenses are automatically logged by system payments (Credit Card bills, EMIs, Chits & AutoPay).</span>
+        </div>
         <button
           onClick={() => setShowAddBudget(!showAddBudget)}
-          className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-saas flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
           id="btn-add-budget"
         >
-          <PiggyBank className="h-4.5 w-4.5" /> Define Budget
+          <PiggyBank className="h-4 w-4" /> Define Budget
         </button>
       </div>
 

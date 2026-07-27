@@ -1,6 +1,9 @@
 import { apiClient } from '../lib/apiClient';
 import { porulalarStore } from '../lib/store';
 
+let activeRefreshPromise: Promise<any> | null = null;
+let lastRefreshSuccessTime = 0;
+
 export const authService = {
   initAuth: (
     onAuthSuccess?: (user: any, token: string) => void,
@@ -8,13 +11,27 @@ export const authService = {
   ) => {
     const cachedUserStr = localStorage.getItem('porulalar_user');
     const refreshToken = localStorage.getItem('porulalar_refresh_token');
+    const accessToken = localStorage.getItem('porulalar_access_token');
 
     if (cachedUserStr && refreshToken) {
       try {
         const userObj = JSON.parse(cachedUserStr);
-        apiClient.post<{ accessToken: string }>('/api/auth/refresh', { refreshToken })
+        const now = Date.now();
+
+        // Skip network refresh if valid access token exists and was refreshed within last 5 mins
+        if (accessToken && now - lastRefreshSuccessTime < 300000) {
+          if (onAuthSuccess) onAuthSuccess(userObj, accessToken);
+          return () => {};
+        }
+
+        if (!activeRefreshPromise) {
+          activeRefreshPromise = apiClient.post<{ accessToken: string }>('/api/auth/refresh', { refreshToken });
+        }
+
+        activeRefreshPromise
           .then(data => {
             localStorage.setItem('porulalar_access_token', data.accessToken);
+            lastRefreshSuccessTime = Date.now();
             if (onAuthSuccess) {
               onAuthSuccess(userObj, data.accessToken);
             }
@@ -25,6 +42,9 @@ export const authService = {
             localStorage.removeItem('porulalar_refresh_token');
             localStorage.removeItem('porulalar_access_token');
             if (onAuthFailure) onAuthFailure();
+          })
+          .finally(() => {
+            activeRefreshPromise = null;
           });
       } catch {
         if (onAuthFailure) onAuthFailure();
