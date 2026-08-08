@@ -70,6 +70,8 @@ import {
   AdminPage
 } from './pages';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { FinancialSimulatorsPanel } from './components/FinancialSimulatorsPanel';
+import { GmailOnboardingModal } from './components/GmailOnboardingModal';
 
 // Auth State Interfaces
 export interface AuthUser {
@@ -200,13 +202,22 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await logout();
-      setUser(null);
-      setToken(null);
-      setNeedsAuth(true);
-      localStorage.removeItem('porulalar_user');
-      window.location.hash = '#/login';
     } catch (err) {
       console.error('Logout error:', err);
+    } finally {
+      // Always clear state regardless of API success
+      setUser(null);
+      setToken(null);
+      setAuthEmail('');
+      setAuthPassword('');
+      setAuthError(null);
+      setAuthMode('login');
+      setNeedsAuth(true);
+      localStorage.removeItem('porulalar_user');
+      localStorage.removeItem('porulalar_access_token');
+      localStorage.removeItem('porulalar_refresh_token');
+      // Reset hash to root so next login lands on dashboard
+      window.location.hash = '#/';
     }
   };
 
@@ -338,6 +349,7 @@ export default function App() {
             <Route path="cards" element={<CardsPage />} />
             <Route path="borrows" element={<BorrowsPage />} />
             <Route path="recurring" element={<RecurringPage />} />
+            <Route path="simulators" element={<FinancialSimulatorsPanel />} />
             <Route path="ai-advisor" element={<AIPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="admin" element={<AdminPage />} />
@@ -856,7 +868,8 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
               { title: 'Fixed Obligations', tabs: [
                 { id: 'emis', label: 'EMI Reminders', icon: Clock },
                 { id: 'loans', label: 'Liability Loans', icon: Briefcase },
-                { id: 'chits', label: 'Chit Funds', icon: Percent }
+                { id: 'chits', label: 'Chit Funds', icon: Percent },
+                { id: 'simulators', label: 'Financial Simulators', icon: Activity }
               ]},
               { title: 'Portfolio Management', tabs: [
                 { id: 'investments', label: 'SIP Investments', icon: PiggyBank },

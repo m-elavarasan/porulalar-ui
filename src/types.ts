@@ -16,7 +16,7 @@ export interface Income {
   id: string;
   userId: string;
   date: string; // YYYY-MM-DD
-  source: string;
+  source: string; // Salary, Business, Rent, Other
   amount: number;
   description: string;
   recurring: boolean;
@@ -70,6 +70,13 @@ export interface Chit {
   prizeTakenMonth: number;
   discountReceived: number;
   expectedProfit: number;
+  foremanCommission?: number;
+  auctionDiscount?: number;
+  dividendReceived?: number;
+  winningMonth?: number;
+  expectedPayout?: number;
+  netProfit?: number;
+  effectiveIrr?: number;
   nextDueDate: string; // YYYY-MM-DD
   status: 'Active' | 'Completed';
   notes: string;
@@ -172,7 +179,6 @@ export interface NetWorthSnapshot {
   createdAt: string;
 }
 
-
 export interface Bank {
   id: string;
   userId: string;
@@ -180,6 +186,13 @@ export interface Bank {
   accountType: string;
   accountNumber?: string;
   currentBalance: number;
+  minimumBalance?: number;
+  availableBalance?: number;
+  emergencyBalance?: number;
+  autoPayEnabled?: boolean;
+  balanceSource?: 'Manual' | 'Gmail' | 'Bank API';
+  confidenceScore?: number;
+  lastUpdatedSource?: string;
   isPrimary: boolean;
   createdAt: string;
 }
@@ -195,8 +208,12 @@ export interface Card {
   creditLimit?: number; // For credit cards
   currentOutstanding?: number; // For credit cards
   statementBalance?: number; // Generated bill amount
-  statementDate?: string; // Day of month (1-31)
-  dueDate?: string; // Full date YYYY-MM-DD or day of month
+  minimumDue?: number;
+  fullPaymentAmount?: number;
+  availableLimit?: number;
+  utilizationRate?: number;
+  statementDate?: string; // Day 1-31
+  dueDate?: string; // Day 1-31 or YYYY-MM-DD
   status: 'Active' | 'Blocked' | 'Closed';
   autoPay?: boolean;
   autoPaySourceId?: string;
@@ -239,4 +256,88 @@ export interface EMI {
   autoPay?: boolean;
   autoPaySourceId?: string;
   createdAt: string;
+}
+
+// ---------- V2 CASH FLOW & CFO ENGINES ----------
+
+export interface MonthlyCashFlowSummary {
+  totalMonthlyIncome: number;
+  salaryIncome: number;
+  businessIncome: number;
+  rentalIncome: number;
+  otherIncome: number;
+  totalFixedObligations: number;
+  loanEmiObligations: number;
+  itemEmiObligations: number;
+  sipObligations: number;
+  chitObligations: number;
+  creditCardDues: number;
+  recurringBills: number;
+  remainingCash: number;
+  emergencyBuffer: number;
+  expectedSurplus: number;
+  investmentCapacity: number;
+  moneyRequiredNext7Days: number;
+  moneyRequiredNext30Days: number;
+  totalLiquidBankBalance: number;
+  safeToSpend: number;
+  expectedCashAfterSalary: number;
+  emergencyReserve: number;
+  cashRunwayMonths: number;
+  monthlyBurn: number;
+  financialStabilityScore: number;
+}
+
+export interface DecisionRecommendation {
+  id: string;
+  category: 'DEBT_REDUCTION' | 'CHIT_OPTIMIZATION' | 'CREDIT_HEALTH' | 'INVESTMENT_GROWTH' | 'CASH_FLOW';
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  title: string;
+  actionSummary: string;
+  explainableReason: string;
+  impactAmount: number;
+  impactMetric: string;
+  scoreGain: number;
+  confidenceScore: number;
+  actionRoute: string;
+  steps: string[];
+}
+
+export interface ChitLoanComparisonResult {
+  chitId: string;
+  chitName: string;
+  loanId: string;
+  loanName: string;
+  prizePayout: number;
+  currentLoanPrincipal: number;
+  loanInterestRate: number;
+  remainingTenureMonths: number;
+  newPrincipalAfterPay: number;
+  interestSaved: number;
+  tenureMonthsReduced: number;
+  remainingChitPayable: number;
+  netFinancialBenefit: number;
+  recommendation: 'TAKE_CHIT_NOW' | 'WAIT' | 'NEUTRAL';
+  recommendationScore: number;
+  confidenceScore: number;
+  reasoning: string[];
+}
+
+export interface LoanPrepaymentResult {
+  originalInterest: number;
+  newInterest: number;
+  interestSaved: number;
+  originalTenure: number;
+  newTenure: number;
+  tenureReduced: number;
+  originalEmi: number;
+  newEmi: number;
+  emiReduced: number;
+}
+
+export interface SIPGrowthResult {
+  totalInvested: number;
+  estimatedGains: number;
+  futureValue: number;
+  wealthMultiplier: number;
 }

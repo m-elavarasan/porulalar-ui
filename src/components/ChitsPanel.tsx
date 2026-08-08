@@ -6,6 +6,7 @@ import { Chit, Bank, Card } from '../types';
 import { createCalendarReminder } from '../lib/googleServices';
 import { useDialog } from './DialogProvider';
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { ChitIntelligenceModal } from './ChitIntelligenceModal';
 
 interface ChitsPanelProps {
   userId: string;
@@ -18,6 +19,7 @@ interface ChitsPanelProps {
 
 export default function ChitsPanel({ userId, chits, banks, cards, accessToken, onRefreshData }: ChitsPanelProps) {
   const { showAlert, showConfirm, showPrompt } = useDialog();
+  const [selectedIntelChit, setSelectedIntelChit] = useState<Chit | null>(null);
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
@@ -1638,6 +1640,12 @@ export default function ChitsPanel({ userId, chits, banks, cards, accessToken, o
             </div>
           </div>
         </div>
+      )}
+      {selectedIntelChit && (
+        <ChitIntelligenceModal
+          chit={selectedIntelChit}
+          onClose={() => setSelectedIntelChit(null)}
+        />
       )}
     </div>
   );

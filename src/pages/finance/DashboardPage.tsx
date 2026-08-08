@@ -27,6 +27,8 @@ import { CreditCard3D } from '../../components/CreditCard3D';
 import { InvestmentCard } from '../../components/InvestmentCard';
 import { MetricCard } from '../../components/MetricCard';
 import { QuickActionModal } from '../../components/QuickActionModal';
+import { CashFlowEnginePanel } from '../../components/CashFlowEnginePanel';
+import { v2Service, DecisionEngineResponse } from '../../services/v2Service';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -247,6 +249,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── CASH FLOW OPERATING SYSTEM ENGINE ── */}
+      <CashFlowEnginePanel />
 
       {/* ── METRICS GRID ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

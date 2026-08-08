@@ -13,6 +13,11 @@
   --color-card-bg: #FFFFFF;
 }
 
+/* Force light color scheme — prevents browser dark mode from auto-darkening */
+:root {
+  color-scheme: light;
+}
+
 /* Modern Calm Light SaaS Background with Soft Mint/Aqua Gradients */
 body {
   font-family: var(--font-sans);
@@ -27,6 +32,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Auth page – full-screen polished gradient background */
+#auth-page {
+  background-color: #f8fafc !important;
+  background-image:
+    radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.12) 0px, transparent 55%),
+    radial-gradient(at 80% 20%, rgba(59, 130, 246, 0.10) 0px, transparent 55%),
+    radial-gradient(at 50% 80%, rgba(129, 236, 236, 0.10) 0px, transparent 55%) !important;
+  background-attachment: fixed;
 }
 
 /* Accessibility Font Scale Utility */
