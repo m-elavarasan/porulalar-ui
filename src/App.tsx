@@ -330,6 +330,41 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Quick Demo Credentials Assistant */}
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs space-y-2 text-left">
+                <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  <span>Demo Accounts</span>
+                  <span className="text-[9px] text-purple-600 font-mono font-bold">Click card to autofill</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthEmail('admin@porulalar.com');
+                      setAuthPassword('admin123');
+                    }}
+                    className="p-2 bg-purple-50 hover:bg-purple-100/80 border border-purple-200/80 rounded-xl text-left transition-all cursor-pointer"
+                  >
+                    <div className="text-[10px] font-extrabold text-purple-900 uppercase">SuperAdmin</div>
+                    <div className="text-[11px] font-bold text-purple-700 font-mono truncate">admin@porulalar.com</div>
+                    <div className="text-[10px] text-purple-600 font-mono mt-0.5 font-bold">Pass: admin123</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthEmail('user@porulalar.com');
+                      setAuthPassword('user123');
+                    }}
+                    className="p-2 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200/80 rounded-xl text-left transition-all cursor-pointer"
+                  >
+                    <div className="text-[10px] font-extrabold text-indigo-900 uppercase">Standard User</div>
+                    <div className="text-[11px] font-bold text-indigo-700 font-mono truncate">user@porulalar.com</div>
+                    <div className="text-[10px] text-indigo-600 font-mono mt-0.5 font-bold">Pass: user123</div>
+                  </button>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={isLoggingIn}
@@ -355,9 +390,9 @@ export default function App() {
                     setAuthMode(authMode === 'login' ? 'register' : 'login');
                     setAuthError(null);
                   }}
-                  className="text-indigo-600 hover:underline cursor-pointer"
+                  className="text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
                 >
-                  {authMode === 'login' ? "Need an account? Register Now" : 'Already have an account? Sign In'}
+                  {authMode === 'login' ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
                 </button>
               </div>
             )}
@@ -376,15 +411,14 @@ export default function App() {
             <Route path="dashboard" element={<DashboardRoute />} />
             <Route path="expenses" element={<ExpensesPage />} />
             <Route path="income" element={<IncomePage />} />
-            <Route path="investments" element={<InvestmentsPage />} />
+            <Route path="borrows" element={<BorrowsPage />} />
+            <Route path="banks" element={<BanksPage />} />
+            <Route path="cards" element={<CardsPage />} />
             <Route path="loans" element={<LoansPage />} />
             <Route path="emis" element={<EMIsPage />} />
             <Route path="chits" element={<ChitsPage />} />
-            <Route path="assets-goals" element={<AssetsGoalsPage />} />
-            <Route path="banks" element={<BanksPage />} />
-            <Route path="cards" element={<CardsPage />} />
-            <Route path="borrows" element={<BorrowsPage />} />
-            <Route path="recurring" element={<RecurringPage />} />
+            <Route path="investments" element={<InvestmentsPage />} />
+            <Route path="goals" element={<AssetsGoalsPage />} />
             <Route path="simulators" element={<FinancialSimulatorsPanel />} />
             <Route path="ai-advisor" element={<AIPage />} />
             <Route path="settings" element={<SettingsPage />} />

@@ -11,7 +11,9 @@ import {
   CheckCircle,
   Clock,
   UserPlus,
-  X
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useDialog } from './DialogProvider';
 import { SuperAdminSidebar } from './SuperAdminSidebar';
@@ -58,6 +60,7 @@ export default function AdminPanel({ token }: AdminPanelProps) {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showModalPassword, setShowModalPassword] = useState(false);
   const [newRole, setNewRole] = useState<'SuperAdmin' | 'user'>('user');
   const [isCreatingUser, setIsCreatingUser] = useState(false);
 
@@ -436,14 +439,24 @@ export default function AdminPanel({ token }: AdminPanelProps) {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="At least 6 characters"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-purple-500 font-medium"
-                />
+                <div className="relative">
+                  <input
+                    type={showModalPassword ? "text" : "password"}
+                    required
+                    placeholder="At least 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-purple-500 font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowModalPassword(!showModalPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    title={showModalPassword ? "Hide password" : "Show password"}
+                  >
+                    {showModalPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <div>
