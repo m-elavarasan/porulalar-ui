@@ -311,56 +311,6 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Local Export Card */}
-            <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Download className="h-5 w-5 text-indigo-600" />
-                  <h3 className="font-bold text-slate-800">Local JSON Export</h3>
-                </div>
-                <p className="text-xs text-slate-500 mb-4 font-medium">
-                  Download a plain text JSON snapshot of all your transactions, assets, EMIs, and settings locally.
-                </p>
-              </div>
-              <button
-                onClick={handleExport}
-                className="w-full bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-indigo-700 font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-              >
-                <Download className="h-4 w-4" /> Download Local JSON
-              </button>
-            </div>
-
-            {/* Local Import Card */}
-            <div className="bg-rose-50/50 border border-rose-100 p-5 rounded-2xl flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Upload className="h-5 w-5 text-rose-600" />
-                  <h3 className="font-bold text-slate-800">Local JSON Import</h3>
-                </div>
-                <p className="text-xs text-slate-500 mb-4 font-medium">
-                  Upload a plain text JSON snapshot to restore your data. <span className="font-semibold text-rose-600">Will merge and overwrite records.</span>
-                </p>
-              </div>
-              <input 
-                type="file" 
-                accept=".json" 
-                className="hidden" 
-                ref={fileInputRef} 
-                onChange={handleImport} 
-              />
-              <button
-                onClick={triggerFileInput}
-                disabled={isUploading}
-                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
-              >
-                {isUploading ? (
-                  <span className="animate-pulse">Uploading...</span>
-                ) : (
-                  <><Upload className="h-4 w-4" /> Upload Local JSON</>
-                )}
-              </button>
-            </div>
-
             {/* Server Encrypted Export */}
             <div className="bg-indigo-50/30 border border-indigo-100 p-5 rounded-2xl flex flex-col justify-between">
               <div>
