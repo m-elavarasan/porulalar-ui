@@ -3,6 +3,15 @@ import { porulalarStore } from '../../lib/store';
 import { useAuth } from '../../App';
 import { debounce } from '../../lib/utils';
 import LoansPanel from '../../components/LoansPanel';
+import { HubHeader } from '../../components/HubHeader';
+import { Briefcase, Clock, Percent, Activity } from 'lucide-react';
+
+const OBLIGATIONS_TABS = [
+  { id: 'loans', label: 'Liability Loans', route: '/loans', icon: Briefcase },
+  { id: 'emis', label: 'EMI Reminders', route: '/emis', icon: Clock },
+  { id: 'chits', label: 'Chit Funds', route: '/chits', icon: Percent },
+  { id: 'simulators', label: 'Simulators', route: '/simulators', icon: Activity },
+];
 
 export default function LoansPage() {
   const { user } = useAuth();
@@ -44,13 +53,21 @@ export default function LoansPage() {
   if (!user) return null;
 
   return (
-    <LoansPanel
-      userId={user.uid}
-      loans={loans}
-      banks={banks}
-      cards={cards}
-      accessToken={null}
-      onRefreshData={loadData}
-    />
+    <div className="space-y-6">
+      <HubHeader
+        title="Obligations & Chit Funds"
+        subtitle="Manage long-term loans, EMI schedules, chit fund investments, and financial payoff simulators."
+        tabs={OBLIGATIONS_TABS}
+        icon={Briefcase}
+      />
+      <LoansPanel
+        userId={user.uid}
+        loans={loans}
+        banks={banks}
+        cards={cards}
+        accessToken={null}
+        onRefreshData={loadData}
+      />
+    </div>
   );
 }

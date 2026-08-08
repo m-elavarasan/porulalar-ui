@@ -3,6 +3,15 @@ import { porulalarStore } from '../../lib/store';
 import { useAuth } from '../../App';
 import { debounce } from '../../lib/utils';
 import EMIsPanel from '../../components/EMIsPanel';
+import { HubHeader } from '../../components/HubHeader';
+import { Briefcase, Clock, Percent, Activity } from 'lucide-react';
+
+const OBLIGATIONS_TABS = [
+  { id: 'loans', label: 'Liability Loans', route: '/loans', icon: Briefcase },
+  { id: 'emis', label: 'EMI Reminders', route: '/emis', icon: Clock },
+  { id: 'chits', label: 'Chit Funds', route: '/chits', icon: Percent },
+  { id: 'simulators', label: 'Simulators', route: '/simulators', icon: Activity },
+];
 
 export default function EMIsPage() {
   const { user } = useAuth();
@@ -44,12 +53,20 @@ export default function EMIsPage() {
   if (!user) return null;
 
   return (
-    <EMIsPanel
-      userId={user.uid}
-      emis={emis}
-      banks={banks}
-      cards={cards}
-      onRefreshData={loadData}
-    />
+    <div className="space-y-6">
+      <HubHeader
+        title="Obligations & Chit Funds"
+        subtitle="Manage long-term loans, EMI schedules, chit fund investments, and financial payoff simulators."
+        tabs={OBLIGATIONS_TABS}
+        icon={Clock}
+      />
+      <EMIsPanel
+        userId={user.uid}
+        emis={emis}
+        banks={banks}
+        cards={cards}
+        onRefreshData={loadData}
+      />
+    </div>
   );
 }

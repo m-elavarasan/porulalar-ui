@@ -13,3 +13,4 @@ export { default as InvestmentsPage } from './portfolio/InvestmentsPage';
 export { default as AssetsGoalsPage } from './portfolio/AssetsGoalsPage';
 export { default as AIPage } from './system/AIPage';
 export { default as SettingsPage } from './system/SettingsPage';
+export { default as SimulatorsPage } from './simulators/SimulatorsPage';

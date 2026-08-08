@@ -36,7 +36,9 @@ import {
   Search,
   Building2,
   CreditCard,
-  Handshake
+  Handshake,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useDialog } from './components/DialogProvider';
 
@@ -95,6 +97,23 @@ export const useAuth = () => {
   return context;
 };
 
+function IndexRoute() {
+  const { user } = useAuth();
+  const roleLower = (user?.role || '').toLowerCase();
+  const isAdmin = roleLower.includes('admin') || roleLower === 'superadmin' || user?.email === 'admin@porulalar.com';
+  return <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />;
+}
+
+function DashboardRoute() {
+  const { user } = useAuth();
+  const roleLower = (user?.role || '').toLowerCase();
+  const isAdmin = roleLower.includes('admin') || roleLower === 'superadmin' || user?.email === 'admin@porulalar.com';
+  if (isAdmin) {
+    return <AdminPage />;
+  }
+  return <DashboardPage />;
+}
+
 const DEFAULT_CATEGORIES = [
   { name: 'Food', color: '#f43f5e' },
   { name: 'Fuel', color: '#3b82f6' },
@@ -122,6 +141,7 @@ export default function App() {
   const [isSuperAdminPortal, setIsSuperAdminPortal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const { showAlert } = useDialog();
@@ -142,15 +162,16 @@ export default function App() {
     const unsubscribe = initAuth(
       (currentUser, accessToken) => {
         if (currentUser) {
-          setUser(currentUser as AuthUser);
+          const userObj = currentUser as AuthUser;
+          setUser(userObj);
           setToken(accessToken);
           setNeedsAuth(false);
           localStorage.setItem('porulalar_user', JSON.stringify({
-            uid: currentUser.uid,
-            displayName: currentUser.displayName,
-            email: currentUser.email,
-            photoURL: currentUser.photoURL,
-            role: currentUser.role
+            uid: userObj.uid,
+            displayName: userObj.displayName,
+            email: userObj.email,
+            photoURL: userObj.photoURL,
+            role: userObj.role
           }));
         }
       },
@@ -177,6 +198,10 @@ export default function App() {
         setToken(result.accessToken);
         setUser(result.user);
         setNeedsAuth(false);
+        const roleLower = (result.user?.role || '').toLowerCase();
+        if (roleLower.includes('admin')) {
+          window.location.hash = '#/admin';
+        }
       } else {
         if (!authEmail || !authPassword) {
           throw new Error('Email and Password are required');
@@ -216,8 +241,9 @@ export default function App() {
       localStorage.removeItem('porulalar_user');
       localStorage.removeItem('porulalar_access_token');
       localStorage.removeItem('porulalar_refresh_token');
-      // Reset hash to root so next login lands on dashboard
+      // Reset hash to root and force clean redirect to login screen
       window.location.hash = '#/';
+      window.location.reload();
     }
   };
 
@@ -284,14 +310,24 @@ export default function App() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none text-slate-900 text-sm font-bold transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="••••••••"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    className="w-full h-12 pl-4 pr-12 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none text-slate-900 text-sm font-bold transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -336,8 +372,8 @@ export default function App() {
       <HashRouter>
         <Routes>
           <Route path="/" element={<AppLayout handleLogout={handleLogout} />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardPage />} />
+            <Route index element={<IndexRoute />} />
+            <Route path="dashboard" element={<DashboardRoute />} />
             <Route path="expenses" element={<ExpensesPage />} />
             <Route path="income" element={<IncomePage />} />
             <Route path="investments" element={<InvestmentsPage />} />
@@ -353,7 +389,7 @@ export default function App() {
             <Route path="ai-advisor" element={<AIPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="admin" element={<AdminPage />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<IndexRoute />} />
           </Route>
         </Routes>
       </HashRouter>
@@ -364,6 +400,8 @@ export default function App() {
 // ── AppLayout shell component ───────────────────────────────────────────
 function AppLayout({ handleLogout }: { handleLogout: () => void }) {
   const { user } = useAuth();
+  const roleLower = (user?.role || '').toLowerCase();
+  const isAdminUser = roleLower.includes('admin') || roleLower === 'superadmin' || user?.email === 'admin@porulalar.com';
   const { showAlert } = useDialog();
   const navigate = useNavigate();
   const location = useLocation();
@@ -427,6 +465,15 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
       isLoadingLayout.current = false;
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+    const roleLower = (user?.role || '').toLowerCase();
+    const isAdminUser = roleLower.includes('admin');
+    if (isAdminUser && (location.pathname === '/' || location.pathname === '/dashboard')) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, location.pathname, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -606,19 +653,11 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.startsWith('/dashboard')) return 'dashboard';
-    if (path.startsWith('/expenses')) return 'expenses';
-    if (path.startsWith('/income')) return 'income';
-    if (path.startsWith('/banks')) return 'banks';
-    if (path.startsWith('/cards')) return 'cards';
-    if (path.startsWith('/emis')) return 'emis';
-    if (path.startsWith('/borrows')) return 'borrows';
-    if (path.startsWith('/loans')) return 'loans';
-    if (path.startsWith('/chits')) return 'chits';
-    if (path.startsWith('/investments')) return 'investments';
-    if (path.startsWith('/assets-goals')) return 'assets';
-    if (path.startsWith('/recurring')) return 'recurring';
-    if (path.startsWith('/ai-advisor')) return 'ai';
-    if (path.startsWith('/settings')) return 'settings';
+    if (path.startsWith('/expenses') || path.startsWith('/income') || path.startsWith('/borrows')) return 'cashflow';
+    if (path.startsWith('/banks') || path.startsWith('/cards')) return 'accounts';
+    if (path.startsWith('/loans') || path.startsWith('/emis') || path.startsWith('/chits') || path.startsWith('/simulators')) return 'obligations';
+    if (path.startsWith('/investments') || path.startsWith('/assets-goals')) return 'portfolio';
+    if (path.startsWith('/ai-advisor') || path.startsWith('/recurring') || path.startsWith('/settings')) return 'system';
     if (path.startsWith('/admin')) return 'admin';
     return 'dashboard';
   };
@@ -628,19 +667,11 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
   const handleTabClick = (tabId: string) => {
     const pathMap: Record<string, string> = {
       dashboard: '/dashboard',
-      expenses: '/expenses',
-      income: '/income',
-      banks: '/banks',
-      cards: '/cards',
-      emis: '/emis',
-      borrows: '/borrows',
-      loans: '/loans',
-      chits: '/chits',
-      investments: '/investments',
-      assets: '/assets-goals',
-      recurring: '/recurring',
-      ai: '/ai-advisor',
-      settings: '/settings',
+      cashflow: '/expenses',
+      accounts: '/banks',
+      obligations: '/loans',
+      portfolio: '/investments',
+      system: '/ai-advisor',
       admin: '/admin'
     };
     navigate(pathMap[tabId] || '/dashboard');
@@ -657,27 +688,229 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
       )}
 
       {/* Primary Header */}
-      <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs py-3 md:py-4 px-4 md:px-6 sticky top-0 z-45 transition-all text-[#0f172a]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center justify-between">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="h-10 w-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-xs">
-                <Wallet className="h-5.5 w-5.5 text-white" />
+      {isAdminUser ? (
+        <header className="bg-slate-900 border-b border-slate-800 shadow-md sticky top-0 z-45 transition-all text-white select-none">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-xs shrink-0">
+                <ShieldCheck className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-base md:text-lg font-extrabold tracking-tight leading-tight text-slate-900">Porulalar Wealth</h1>
-                <span className="text-[9px] text-blue-600 font-mono tracking-wider block font-bold uppercase">SUPERVISOR • {user?.uid.substring(0, 8).toUpperCase()}</span>
+                <h1 className="text-base md:text-lg font-extrabold tracking-tight leading-tight text-white flex items-center gap-2">
+                  Porulalar Admin Console
+                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-300 font-mono font-extrabold uppercase">
+                    SuperAdmin
+                  </span>
+                </h1>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5">High-security system metrics, audit logs & role authorization</p>
               </div>
             </div>
 
-            {/* Compact controls on mobile */}
-            <div className="flex items-center gap-2 md:hidden">
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 bg-slate-800/80 border border-slate-700 py-1.5 px-3 rounded-xl text-xs text-slate-300">
+                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-mono text-[11px]">Backend API Online</span>
+              </div>
+
+              <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 py-1.5 px-3 rounded-xl">
+                <div className="h-5 w-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-black">
+                  {user?.email?.[0]?.toUpperCase() || 'A'}
+                </div>
+                <span className="text-xs font-bold text-slate-200 truncate max-w-[150px]">{user?.email || 'SuperAdmin'}</span>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="p-2.5 text-slate-300 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl border border-slate-700 bg-slate-800 shadow-xs cursor-pointer transition-all"
+                title="Sign Out"
+              >
+                <LogOut className="h-4.5 w-4.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* FULL WIDTH HORIZONTAL HUB NAVIGATION BAR FOR SUPERADMIN */}
+          <div className="border-t border-slate-800 bg-slate-950/80 px-4 md:px-6 py-2 overflow-x-auto scrollbar-none">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="flex items-center gap-2 px-4 py-1.5 text-xs rounded-xl bg-purple-600 text-white font-extrabold shadow-sm cursor-pointer"
+                >
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  <span>SuperAdmin Console</span>
+                </button>
+              </div>
+              <div className="text-[10px] font-mono text-purple-300 uppercase tracking-widest font-bold">
+                Control Plane Active • Role: SuperAdmin
+              </div>
+            </div>
+          </div>
+        </header>
+      ) : (
+        <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs sticky top-0 z-45 transition-all text-[#0f172a]">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="h-10 w-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-xs">
+                  <Wallet className="h-5.5 w-5.5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-base md:text-lg font-extrabold tracking-tight leading-tight text-slate-900">Porulalar Wealth</h1>
+                  <span className="text-[9px] text-blue-600 font-mono tracking-wider block font-bold uppercase">
+                    PERSONAL WEALTH WORKSPACE
+                  </span>
+                </div>
+              </div>
+
+              {/* Compact controls on mobile */}
+              <div className="flex items-center gap-2 md:hidden">
+                <button
+                  onClick={() => setIsNotificationsOpen(true)}
+                  className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 bg-white relative"
+                  title="Alerts & Notifications"
+                >
+                  <Bell className="h-4 w-4" />
+                  {alertCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                      {alertCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 bg-white"
+                  title="Sign Out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* GLOBAL SEARCH BAR */}
+            <div className="relative flex-1 max-w-md w-full" id="global-search-container">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  placeholder="Search ledger, assets, goals..."
+                  className="w-full bg-slate-100/80 border border-slate-200 rounded-2xl pl-10 pr-10 py-2 text-xs text-[#0f172a] placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-xs font-semibold"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    title="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* SEARCH RESULTS DROPDOWN */}
+              {isSearchFocused && searchQuery.trim() && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsSearchFocused(false)} 
+                  />
+                  
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-xl max-h-[420px] overflow-y-auto z-50 p-4 space-y-4 text-left">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                        Search Results ({totalResultsCount})
+                      </span>
+                      <button 
+                        onClick={() => setSearchQuery('')}
+                        className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    {totalResultsCount === 0 ? (
+                      <div className="py-8 text-center text-slate-400">
+                        <p className="text-sm font-semibold">No matches found</p>
+                        <p className="text-xs mt-1">Try searching for details, categories, or amounts.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {searchResults.expenses.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-600 uppercase tracking-widest pl-1">
+                              <Receipt className="h-3.5 w-3.5" /> Expenses ({searchResults.expenses.length})
+                            </div>
+                            <div className="space-y-1">
+                              {searchResults.expenses.map((e: any) => (
+                                <button
+                                  key={e.id}
+                                  onClick={() => {
+                                    navigate('/expenses');
+                                    setIsSearchFocused(false);
+                                  }}
+                                  className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
+                                >
+                                  <div>
+                                    <div className="text-xs font-bold text-slate-800">{e.description || e.category}</div>
+                                    <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                      <span className="font-semibold text-rose-600">{e.category}</span>
+                                      <span>• {e.date}</span>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs font-black text-rose-600 font-mono">-₹{e.amount.toLocaleString('en-IN')}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {searchResults.income.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-widest pl-1">
+                              <ArrowDownLeft className="h-3.5 w-3.5" /> Income ({searchResults.income.length})
+                            </div>
+                            <div className="space-y-1">
+                              {searchResults.income.map((i: any) => (
+                                <button
+                                  key={i.id}
+                                  onClick={() => {
+                                    navigate('/income');
+                                    setIsSearchFocused(false);
+                                  }}
+                                  className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
+                                >
+                                  <div>
+                                    <div className="text-xs font-bold text-slate-800">{i.description || i.source}</div>
+                                    <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                      <span className="font-semibold text-emerald-600">{i.source}</span>
+                                      <span>• {i.date}</span>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs font-black text-emerald-600 font-mono">+₹{i.amount.toLocaleString('en-IN')}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="hidden md:flex items-center gap-3">
+              {/* Notification Bell */}
               <button
                 onClick={() => setIsNotificationsOpen(true)}
-                className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 bg-white relative"
+                className="p-2.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl border border-slate-200 bg-white shadow-xs cursor-pointer transition-all relative"
                 title="Alerts & Notifications"
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-4.5 w-4.5" />
                 {alertCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
                     {alertCount}
@@ -685,247 +918,80 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
                 )}
               </button>
 
+              {/* Settings Quick Access */}
+              <button
+                onClick={() => navigate('/settings')}
+                className="p-2.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl border border-slate-200 bg-white shadow-xs cursor-pointer transition-all"
+                title="Preferences & Settings"
+              >
+                <Sliders className="h-4.5 w-4.5" />
+              </button>
+
+              {/* Profile */}
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-xl select-none">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="avatar" className="h-5 w-5 rounded-full" />
+                ) : (
+                  <div className="h-5 w-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
+                    {user?.email?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <span className="text-xs font-bold text-slate-700 truncate max-w-[140px]">{user?.email || 'Active User'}</span>
+              </div>
+
+              {/* Logout */}
               <button
                 onClick={handleLogout}
-                className="p-1.5 text-slate-700 hover:bg-slate-100 rounded-xl border border-slate-200 bg-white"
+                className="p-2.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 bg-white shadow-xs cursor-pointer transition-all"
                 title="Sign Out"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-4.5 w-4.5" />
               </button>
             </div>
           </div>
 
-          {/* GLOBAL SEARCH BAR */}
-          <div className="relative flex-1 max-w-md w-full" id="global-search-container">
-            <div className="relative">
-              <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search ledger, assets, goals..."
-                className="w-full bg-slate-100/80 border border-slate-200 rounded-2xl pl-10 pr-10 py-2 text-xs text-[#0f172a] placeholder:text-slate-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-xs font-semibold"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 cursor-pointer"
-                  title="Clear search"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+          {/* FULL WIDTH HORIZONTAL HUB NAVIGATION BAR */}
+          <div className="border-t border-slate-100 bg-slate-50/80 px-4 md:px-6 py-2 overflow-x-auto scrollbar-none">
+            <div className="max-w-7xl mx-auto flex items-center gap-2">
+              {(() => {
+                type TabDef = { id: string; label: string; icon: any };
+                const hubs: TabDef[] = [
+                  { id: 'dashboard', label: 'Overview', icon: Grid },
+                  { id: 'cashflow', label: 'Cash Flow', icon: Receipt },
+                  { id: 'accounts', label: 'Accounts & Credit', icon: Building2 },
+                  { id: 'obligations', label: 'Obligations & Chits', icon: Percent },
+                  { id: 'portfolio', label: 'Portfolio & Assets', icon: PiggyBank },
+                  { id: 'system', label: 'AI Supervisor', icon: Sparkles }
+                ];
 
-            {/* SEARCH RESULTS DROPDOWN */}
-            {isSearchFocused && searchQuery.trim() && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setIsSearchFocused(false)} 
-                />
-                
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-xl max-h-[420px] overflow-y-auto z-50 p-4 space-y-4 text-left">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                      Search Results ({totalResultsCount})
-                    </span>
-                    <button 
-                      onClick={() => setSearchQuery('')}
-                      className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  </div>
-
-                  {totalResultsCount === 0 ? (
-                    <div className="py-8 text-center text-slate-400">
-                      <p className="text-sm font-semibold">No matches found</p>
-                      <p className="text-xs mt-1">Try searching for details, categories, or amounts.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {searchResults.expenses.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-600 uppercase tracking-widest pl-1">
-                            <Receipt className="h-3.5 w-3.5" /> Expenses ({searchResults.expenses.length})
-                          </div>
-                          <div className="space-y-1">
-                            {searchResults.expenses.map((e: any) => (
-                              <button
-                                key={e.id}
-                                onClick={() => {
-                                  navigate('/expenses');
-                                  setIsSearchFocused(false);
-                                }}
-                                className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
-                              >
-                                <div>
-                                  <div className="text-xs font-bold text-slate-800">{e.description || e.category}</div>
-                                  <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-                                    <span className="font-semibold text-rose-600">{e.category}</span>
-                                    <span>• {e.date}</span>
-                                  </div>
-                                </div>
-                                <div className="text-xs font-black text-rose-600 font-mono">-₹{e.amount.toLocaleString('en-IN')}</div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {searchResults.income.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-widest pl-1">
-                            <ArrowDownLeft className="h-3.5 w-3.5" /> Income ({searchResults.income.length})
-                          </div>
-                          <div className="space-y-1">
-                            {searchResults.income.map((i: any) => (
-                              <button
-                                key={i.id}
-                                onClick={() => {
-                                  navigate('/income');
-                                  setIsSearchFocused(false);
-                                }}
-                                className="w-full text-left p-2.5 hover:bg-slate-50 rounded-xl transition-colors flex items-center justify-between border border-transparent hover:border-slate-100 cursor-pointer"
-                              >
-                                <div>
-                                  <div className="text-xs font-bold text-slate-800">{i.description || i.source}</div>
-                                  <div className="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
-                                    <span className="font-semibold text-emerald-600">{i.source}</span>
-                                    <span>• {i.date}</span>
-                                  </div>
-                                </div>
-                                <div className="text-xs font-black text-emerald-600 font-mono">+₹{i.amount.toLocaleString('en-IN')}</div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="hidden md:flex items-center gap-3.5">
-            {/* Notification Bell */}
-            <button
-              onClick={() => setIsNotificationsOpen(true)}
-              className="p-2.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-xs cursor-pointer transition-all relative"
-              title="Alerts & Notifications"
-            >
-              <Bell className="h-4.5 w-4.5" />
-              {alertCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                  {alertCount}
-                </span>
-              )}
-            </button>
-
-            {/* Profile */}
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-xl select-none">
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt="avatar" className="h-5 w-5 rounded-full" />
-              ) : (
-                <div className="h-5 w-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
-                  {user?.email?.[0]?.toUpperCase() || 'U'}
-                </div>
-              )}
-              <span className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{user?.email || 'Active User'}</span>
-            </div>
-
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className="p-2.5 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 bg-white shadow-xs cursor-pointer transition-all"
-              title="Sign Out"
-            >
-              <LogOut className="h-4.5 w-4.5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Layout view wrapper */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-4 md:py-8 flex flex-col lg:flex-row gap-4 lg:gap-8">
-        <aside className="w-full lg:w-64 shrink-0 flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible pb-3.5 lg:pb-0 gap-2 lg:gap-1.5 scrollbar-none" id="nav-rail">
-          {(() => {
-            type TabDef = { id: string; label: string; icon: any };
-            const groups: { title?: string; tabs: TabDef[] }[] = [
-              { tabs: [{ id: 'dashboard', label: 'Dashboard', icon: Grid }] },
-              { title: 'Transactions', tabs: [
-                { id: 'expenses', label: 'Expenses', icon: Receipt },
-                { id: 'income', label: 'Income Ledger', icon: ArrowDownLeft },
-                { id: 'borrows', label: 'Borrow / Lend', icon: Handshake }
-              ]},
-              { title: 'Banking & Cards', tabs: [
-                { id: 'banks', label: 'Bank Accounts', icon: Building2 },
-                { id: 'cards', label: 'Credit Cards', icon: CreditCard }
-              ]},
-              { title: 'Fixed Obligations', tabs: [
-                { id: 'emis', label: 'EMI Reminders', icon: Clock },
-                { id: 'loans', label: 'Liability Loans', icon: Briefcase },
-                { id: 'chits', label: 'Chit Funds', icon: Percent },
-                { id: 'simulators', label: 'Financial Simulators', icon: Activity }
-              ]},
-              { title: 'Portfolio Management', tabs: [
-                { id: 'investments', label: 'SIP Investments', icon: PiggyBank },
-                { id: 'assets', label: 'Capital Assets', icon: Award }
-              ]},
-              { title: 'Administration', tabs: [
-                { id: 'recurring', label: 'Autopay Scheduler', icon: Calendar },
-                { id: 'ai', label: 'AI Supervisor', icon: Sparkles },
-                { id: 'settings', label: 'Config Panel', icon: Sliders }
-              ]}
-            ];
-
-            // Render role specific Super Admin tab
-            if (user?.role === 'admin') {
-              groups.push({
-                title: 'System Supervision',
-                tabs: [{ id: 'admin', label: 'Admin Terminal', icon: Sliders }]
-              });
-            }
-
-            return groups.map((g, idx) => (
-              <React.Fragment key={idx}>
-                {g.title && (
-                  <span className="hidden lg:block text-[9px] font-extrabold text-slate-400 uppercase tracking-widest pl-4 mt-5 mb-1.5">
-                    {g.title}
-                  </span>
-                )}
-                {g.tabs.map((tab) => {
+                return hubs.map((tab) => {
                   const IconComp = tab.icon;
                   const isActive = activeTab === tab.id;
                   return (
                     <button
                       key={tab.id}
                       onClick={() => handleTabClick(tab.id)}
-                      className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-saas cursor-pointer shrink-0 border lg:w-full lg:justify-between lg:py-2.5 lg:px-4 ${
+                      className={`flex items-center gap-2 px-4 py-2 text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                         isActive
-                          ? 'bg-blue-600 text-white shadow-xs border-blue-600 font-bold'
-                          : 'bg-white border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:text-blue-600'
+                          ? 'bg-blue-600 text-white font-extrabold shadow-sm'
+                          : 'bg-white text-slate-700 hover:bg-slate-200/70 border border-slate-200/60 font-semibold'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <IconComp className={`h-4 w-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                        <span>{tab.label}</span>
-                      </div>
-                      <ChevronRight className={`hidden lg:block h-3.5 w-3.5 opacity-60 transition-transform ${isActive ? 'rotate-90 opacity-100' : ''}`} />
+                      <IconComp className="h-4 w-4 shrink-0" />
+                      <span>{tab.label}</span>
                     </button>
                   );
-                })}
-              </React.Fragment>
-            ));
-          })()}
-        </aside>
+                });
+              })()}
+            </div>
+          </div>
+        </header>
+      )}
 
-        {/* Content routing window */}
-        <main className="flex-1 overflow-hidden">
-          <Outlet />
+      {/* Main Layout view wrapper - 100% Width */}
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6">
+        <main className="w-full">
+          {isAdminUser ? <AdminPage /> : <Outlet />}
         </main>
       </div>
 
@@ -986,44 +1052,46 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
       )}
 
       {/* Floating Action Quick Ledger */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
-        {isQuickActionOpen && (
-          <div className="flex flex-col gap-2 animate-in slide-in-from-bottom duration-250 mb-2">
-            <button
-              onClick={() => {
-                setActiveQuickForm('expense');
-                setIsQuickActionOpen(false);
-              }}
-              className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-md text-xs transition-colors cursor-pointer border border-rose-500/30"
-            >
-              <Receipt className="h-4 w-4" />
-              <span>Log Quick Expense</span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveQuickForm('income');
-                setIsQuickActionOpen(false);
-              }}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-md text-xs transition-colors cursor-pointer border border-emerald-500/30"
-            >
-              <ArrowDownLeft className="h-4 w-4" />
-              <span>Log Quick Income</span>
-            </button>
-          </div>
-        )}
+      {!isAdminUser && (
+        <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+          {isQuickActionOpen && (
+            <div className="flex flex-col gap-2 animate-in slide-in-from-bottom duration-250 mb-2">
+              <button
+                onClick={() => {
+                  setActiveQuickForm('expense');
+                  setIsQuickActionOpen(false);
+                }}
+                className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-md text-xs transition-colors cursor-pointer border border-rose-500/30"
+              >
+                <Receipt className="h-4 w-4" />
+                <span>Log Quick Expense</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveQuickForm('income');
+                  setIsQuickActionOpen(false);
+                }}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4.5 py-2.5 rounded-2xl shadow-md text-xs transition-colors cursor-pointer border border-emerald-500/30"
+              >
+                <ArrowDownLeft className="h-4 w-4" />
+                <span>Log Quick Income</span>
+              </button>
+            </div>
+          )}
 
-        <button
-          onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
-          className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg border transition-colors cursor-pointer ${
-            isQuickActionOpen 
-              ? 'bg-slate-800 hover:bg-slate-900 border-slate-700 rotate-45' 
-              : 'bg-indigo-600 hover:bg-indigo-700 border-indigo-500'
-          }`}
-          title="Quick Action Ledger"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
-      </div>
+          <button
+            onClick={() => setIsQuickActionOpen(!isQuickActionOpen)}
+            className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-lg border transition-colors cursor-pointer ${
+              isQuickActionOpen 
+                ? 'bg-slate-800 hover:bg-slate-900 border-slate-700 rotate-45' 
+                : 'bg-indigo-600 hover:bg-indigo-700 border-indigo-500'
+            }`}
+            title="Quick Action Ledger"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        </div>
+      )}
 
       {/* Rapid Add Modal */}
       {activeQuickForm && (
@@ -1226,7 +1294,8 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
         activeTab={location.pathname.replace('/', '') || 'dashboard'}
         onSelectTab={(tab) => navigate(`/${tab}`)}
         onOpenQuickAdd={() => setActiveQuickForm('expense')}
-        isSuperAdmin={user?.role === 'SuperAdmin'}
+        isSuperAdmin={isAdminUser}
+        onLogout={handleLogout}
       />
     </div>
   );

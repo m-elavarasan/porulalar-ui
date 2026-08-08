@@ -31,9 +31,18 @@ import { CashFlowEnginePanel } from '../../components/CashFlowEnginePanel';
 import { OneClickPayment } from '../../components/OneClickPayment';
 import { v2Service, DecisionEngineResponse } from '../../services/v2Service';
 
+import AdminPage from '../admin/AdminPage';
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const roleLower = (user?.role || '').toLowerCase();
+  const isSuperAdmin = roleLower.includes('admin') || roleLower === 'superadmin' || user?.email === 'admin@porulalar.com';
+
+  if (isSuperAdmin) {
+    return <AdminPage />;
+  }
 
   const [stats, setStats] = useState<any>(null);
   const [loans, setLoans] = useState<any[]>([]);
@@ -177,51 +186,60 @@ export default function DashboardPage() {
 
       {/* ── DESKTOP DASHBOARD EXPERIENCE (Visible on tablet & desktop) ── */}
       <div className="hidden md:block space-y-6">
-        {/* Top Hero Summary Card */}
-        <div className="saas-card-lg p-6 lg:p-7 bg-white border border-slate-200/90 shadow-xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-teal-100/30 via-emerald-50/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+        {/* Top Hero Summary Card V2 */}
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-7 rounded-3xl shadow-xl relative overflow-hidden space-y-6 border border-slate-800">
+          <div className="absolute -top-12 -right-12 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
-            <div className="space-y-2">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 font-medium">
-                  Welcome back, <strong className="text-slate-900 capitalize font-bold">{userName}</strong> 👋
+                <span className="text-xs text-slate-400 font-medium">
+                  Welcome back, <strong className="text-white capitalize font-bold">{userName}</strong> 👋
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30">
+                  Live Portfolio
                 </span>
               </div>
 
               <div>
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Current Net Worth</span>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight font-sans mt-0.5">
-                  ₹{netWorth.toLocaleString('en-IN')}<span className="text-xl text-slate-400 font-semibold">.00</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Total Net Worth</span>
+                <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mt-1">
+                  ₹{netWorth.toLocaleString('en-IN')}<span className="text-xl text-slate-400 font-medium">.00</span>
                 </h1>
               </div>
 
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
                 {netWorthChangePct !== 0 && (
-                  <span className={`inline-flex items-center gap-1 font-semibold px-2.5 py-1 rounded-lg border ${netWorthChangePct >= 0 ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60'}`}>
+                  <span className={`inline-flex items-center gap-1 font-bold px-3 py-1 rounded-xl border ${
+                    netWorthChangePct >= 0 ? 'text-emerald-300 bg-emerald-500/15 border-emerald-400/30' : 'text-rose-300 bg-rose-500/15 border-rose-400/30'
+                  }`}>
                     <TrendingUp size={14} /> {netWorthChangePct >= 0 ? '+' : ''}{netWorthChangePct.toFixed(1)}% this month
                   </span>
                 )}
-                <span className="text-slate-600 font-medium">
-                  Liquid Cash: <strong className="text-slate-900 font-bold">₹{totalBankBalance.toLocaleString('en-IN')}</strong>
+                <span className="text-slate-300 font-medium">
+                  Liquid Cash: <strong className="text-emerald-400 font-extrabold">₹{totalBankBalance.toLocaleString('en-IN')}</strong>
+                </span>
+                <span className="text-slate-300 font-medium">
+                  Total Debt: <strong className="text-rose-300 font-extrabold">₹{totalDebt.toLocaleString('en-IN')}</strong>
                 </span>
               </div>
             </div>
 
             {/* Health Score Gauge & Quick Actions */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-4 lg:pt-0 lg:pl-6">
-              <div className="bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200/80 flex items-center gap-3.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 border-t lg:border-t-0 lg:border-l border-white/10 pt-5 lg:pt-0 lg:pl-8">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-4 backdrop-blur-md">
                 <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                     <path
-                      className="text-slate-200"
+                      className="text-white/10"
                       strokeWidth="3.5"
                       stroke="currentColor"
                       fill="none"
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                     <path
-                      className="text-emerald-600"
+                      className="text-emerald-400"
                       strokeDasharray={`${healthScore}, 100`}
                       strokeWidth="3.5"
                       strokeLinecap="round"
@@ -230,20 +248,20 @@ export default function DashboardPage() {
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                   </svg>
-                  <span className="absolute font-extrabold text-xs text-slate-900">{healthScore}</span>
+                  <span className="absolute font-black text-sm text-white">{healthScore}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Financial Health</span>
-                  <span className="text-xs font-extrabold text-emerald-700 block">Excellent</span>
-                  <span className="text-[10px] text-slate-500">Top 5% financial stability</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Financial Stability</span>
+                  <span className="text-xs font-black text-emerald-400 block">Top Tier Excellent</span>
+                  <span className="text-[10px] text-slate-400 font-medium">95% optimal cashflow reserve</span>
                 </div>
               </div>
 
               <button
                 onClick={() => setIsQuickActionOpen(true)}
-                className="px-4 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-saas flex items-center justify-center gap-2 shrink-0"
+                className="px-5 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
               >
-                <PlusCircle size={16} />
+                <PlusCircle size={18} />
                 <span>Quick Action</span>
               </button>
             </div>

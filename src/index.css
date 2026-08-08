@@ -73,22 +73,52 @@ body.font-scale-xlarge {
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
-/* Soft Elevation Cards */
+/* Modern SaaS Card Design System */
 .saas-card {
   background-color: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 16px;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .saas-card-lg {
   background-color: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 28px;
+  box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
 }
 
-/* Soft Mint & Aqua Highlight Panels */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+}
+
+.glass-card-dark {
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  color: #FFFFFF;
+}
+
+.gradient-mesh-indigo {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+}
+
+.gradient-mesh-emerald {
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+}
+
+.gradient-mesh-amber {
+  background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
+}
+
+/* Soft Accent Highlight Cards */
 .mint-accent-card {
   background: linear-gradient(135deg, rgba(154, 236, 219, 0.15) 0%, rgba(255, 255, 255, 1) 100%);
   border: 1px solid rgba(154, 236, 219, 0.4);

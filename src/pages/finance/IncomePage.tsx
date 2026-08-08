@@ -3,6 +3,14 @@ import { porulalarStore } from '../../lib/store';
 import { useAuth } from '../../App';
 import { debounce } from '../../lib/utils';
 import IncomePanel from '../../components/IncomePanel';
+import { HubHeader } from '../../components/HubHeader';
+import { Receipt, ArrowDownLeft, Handshake } from 'lucide-react';
+
+const CASH_FLOW_TABS = [
+  { id: 'expenses', label: 'Expenses & Budgets', route: '/expenses', icon: Receipt },
+  { id: 'income', label: 'Income Ledger', route: '/income', icon: ArrowDownLeft },
+  { id: 'borrows', label: 'Borrow & Lend', route: '/borrows', icon: Handshake },
+];
 
 export default function IncomePage() {
   const { user } = useAuth();
@@ -68,6 +76,12 @@ export default function IncomePage() {
 
   return (
     <div className="space-y-6">
+      <HubHeader
+        title="Cash Flow Management"
+        subtitle="Track income, daily expenses, category budgets, and borrow/lend transactions."
+        tabs={CASH_FLOW_TABS}
+        icon={ArrowDownLeft}
+      />
       <IncomePanel
         userId={user.uid}
         income={income}

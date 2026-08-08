@@ -3,6 +3,13 @@ import { porulalarStore } from '../../lib/store';
 import { useAuth } from '../../App';
 import { debounce } from '../../lib/utils';
 import BanksPanel from '../../components/BanksPanel';
+import { HubHeader } from '../../components/HubHeader';
+import { Building2, CreditCard } from 'lucide-react';
+
+const ACCOUNTS_TABS = [
+  { id: 'banks', label: 'Bank Accounts', route: '/banks', icon: Building2 },
+  { id: 'cards', label: 'Credit Cards', route: '/cards', icon: CreditCard },
+];
 
 export default function BanksPage() {
   const { user } = useAuth();
@@ -36,10 +43,18 @@ export default function BanksPage() {
   if (!user) return null;
 
   return (
-    <BanksPanel
-      userId={user.uid}
-      banks={banks}
-      onRefreshData={loadData}
-    />
+    <div className="space-y-6">
+      <HubHeader
+        title="Accounts & Credit Management"
+        subtitle="Manage your savings accounts, checking balances, credit limits, and billing dates."
+        tabs={ACCOUNTS_TABS}
+        icon={Building2}
+      />
+      <BanksPanel
+        userId={user.uid}
+        banks={banks}
+        onRefreshData={loadData}
+      />
+    </div>
   );
 }

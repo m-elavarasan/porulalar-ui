@@ -3,6 +3,14 @@ import { porulalarStore } from '../../lib/store';
 import { useAuth } from '../../App';
 import { debounce } from '../../lib/utils';
 import BorrowPanel from '../../components/BorrowPanel';
+import { HubHeader } from '../../components/HubHeader';
+import { Receipt, ArrowDownLeft, Handshake } from 'lucide-react';
+
+const CASH_FLOW_TABS = [
+  { id: 'expenses', label: 'Expenses & Budgets', route: '/expenses', icon: Receipt },
+  { id: 'income', label: 'Income Ledger', route: '/income', icon: ArrowDownLeft },
+  { id: 'borrows', label: 'Borrow & Lend', route: '/borrows', icon: Handshake },
+];
 
 export default function BorrowsPage() {
   const { user } = useAuth();
@@ -44,12 +52,20 @@ export default function BorrowsPage() {
   if (!user) return null;
 
   return (
-    <BorrowPanel
-      userId={user.uid}
-      borrows={borrows}
-      banks={banks}
-      cards={cards}
-      onRefreshData={loadData}
-    />
+    <div className="space-y-6">
+      <HubHeader
+        title="Cash Flow Management"
+        subtitle="Track income, daily expenses, category budgets, and borrow/lend transactions."
+        tabs={CASH_FLOW_TABS}
+        icon={Handshake}
+      />
+      <BorrowPanel
+        userId={user.uid}
+        borrows={borrows}
+        banks={banks}
+        cards={cards}
+        onRefreshData={loadData}
+      />
+    </div>
   );
 }

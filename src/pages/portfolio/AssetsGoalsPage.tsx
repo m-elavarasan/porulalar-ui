@@ -3,6 +3,13 @@ import { porulalarStore } from '../../lib/store';
 import { useAuth } from '../../App';
 import { debounce } from '../../lib/utils';
 import AssetsGoalsPanel from '../../components/AssetsGoalsPanel';
+import { HubHeader } from '../../components/HubHeader';
+import { PiggyBank, Award } from 'lucide-react';
+
+const PORTFOLIO_TABS = [
+  { id: 'investments', label: 'SIP Investments', route: '/investments', icon: PiggyBank },
+  { id: 'assets-goals', label: 'Assets & Goals', route: '/assets-goals', icon: Award },
+];
 
 export default function AssetsGoalsPage() {
   const { user } = useAuth();
@@ -45,11 +52,19 @@ export default function AssetsGoalsPage() {
   if (!user) return null;
 
   return (
-    <AssetsGoalsPanel
-      userId={user.uid}
-      assets={assets}
-      goals={goals}
-      onRefreshData={loadData}
-    />
+    <div className="space-y-6">
+      <HubHeader
+        title="Portfolio & Asset Management"
+        subtitle="Track mutual funds, SIPs, gold, real estate assets, and long-term financial targets."
+        tabs={PORTFOLIO_TABS}
+        icon={Award}
+      />
+      <AssetsGoalsPanel
+        userId={user.uid}
+        assets={assets}
+        goals={goals}
+        onRefreshData={loadData}
+      />
+    </div>
   );
 }

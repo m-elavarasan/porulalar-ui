@@ -9,6 +9,14 @@ export const adminService = {
     return apiClient.get<any[]>('/api/admin/users');
   },
 
+  createUser: async (userData: { email: string; password?: string; role: string }): Promise<any> => {
+    return apiClient.post('/api/admin/users', userData);
+  },
+
+  deleteUser: async (userId: string): Promise<void> => {
+    return apiClient.delete(`/api/admin/users/${userId}`);
+  },
+
   getMenus: async (): Promise<any[]> => {
     return apiClient.get<any[]>('/api/admin/menus');
   },

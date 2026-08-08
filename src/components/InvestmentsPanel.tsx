@@ -1,19 +1,41 @@
 import { porulalarStore, increment } from '../lib/store';
 import { analyticsService } from '../services/analyticsService';
 import { bankService } from '../services/bankService';
-import React, { useState } from 'react';
-import { Plus, Trash, ArrowUpRight, TrendingUp, TrendingDown, PiggyBank, RefreshCw, Pencil, Upload, AlertTriangle, CheckCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { 
+  Plus, 
+  Trash, 
+  TrendingUp, 
+  TrendingDown, 
+  PiggyBank, 
+  RefreshCw, 
+  Pencil, 
+  Upload, 
+  CheckCircle,
+  Search,
+  Filter,
+  PieChart,
+  LineChart,
+  Landmark,
+  Coins,
+  Layers,
+  ArrowUpDown,
+  Zap,
+  Wallet,
+  ShieldCheck,
+  Sparkles,
+  ChevronDown
+} from 'lucide-react';
 import { Investment, Bank, Card } from '../types';
 import { useDialog } from './DialogProvider';
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from 'recharts';
 import { numberToWords } from '../lib/utils';
 
@@ -37,8 +59,24 @@ const INVESTMENT_TYPES = [
   'Other',
 ];
 
+const CATEGORY_TABS = [
+  { id: 'ALL', label: 'All Investments', icon: Wallet },
+  { id: 'Mutual Fund', label: 'Mutual Funds', icon: PieChart },
+  { id: 'Stocks', label: 'Stocks & Equity', icon: LineChart },
+  { id: 'Gold', label: 'Gold & Bullion', icon: Coins },
+  { id: 'FIXED', label: 'FD / RD / PPF', icon: Landmark },
+  { id: 'Chit Investment', label: 'Chits & Others', icon: Layers },
+];
+
 export default function InvestmentsPanel({ userId, investments, banks, cards, onRefreshData }: InvestmentsPanelProps) {
   const { showAlert, showConfirm, showPrompt } = useDialog();
+  
+  // Filter and Sort states
+  const [selectedTab, setSelectedTab] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'value' | 'returns' | 'sip' | 'name'>('value');
+
+  // Form state
   const [investmentType, setInvestmentType] = useState('Mutual Fund');
   const [investmentName, setInvestmentName] = useState('');
   const [platform, setPlatform] = useState('');
@@ -95,6 +133,79 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
     fetchXIRRs();
   }, [investments]);
 
+  // Executive KPI Calculations
+  const portfolioSummary = useMemo(() => {
+    let totalInvested = 0;
+    let totalCurrent = 0;
+    let totalMonthlySip = 0;
+    let activeSipCount = 0;
+    let liveTrackedCount = 0;
+
+    investments.forEach((inv) => {
+      totalInvested += inv.investedAmount || 0;
+      totalCurrent += inv.currentValue || 0;
+      if (inv.monthlyContribution && inv.monthlyContribution > 0) {
+        totalMonthlySip += inv.monthlyContribution;
+        activeSipCount++;
+      }
+      if (inv.isLiveTracked) {
+        liveTrackedCount++;
+      }
+    });
+
+    const totalProfit = totalCurrent - totalInvested;
+    const overallReturnPct = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+
+    return {
+      totalInvested,
+      totalCurrent,
+      totalProfit,
+      overallReturnPct,
+      totalMonthlySip,
+      activeSipCount,
+      liveTrackedCount,
+      totalAssetsCount: investments.length,
+    };
+  }, [investments]);
+
+  // Filtered & Sorted Investments
+  const filteredInvestments = useMemo(() => {
+    return investments
+      .filter((inv) => {
+        // Tab Filter
+        if (selectedTab === 'FIXED') {
+          if (!['FD', 'RD', 'PPF', 'NPS'].includes(inv.investmentType)) return false;
+        } else if (selectedTab === 'Chit Investment') {
+          if (!['Chit Investment', 'Other'].includes(inv.investmentType)) return false;
+        } else if (selectedTab !== 'ALL' && inv.investmentType !== selectedTab) {
+          return false;
+        }
+
+        // Search Filter
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matchName = inv.investmentName?.toLowerCase().includes(q);
+          const matchPlatform = inv.platform?.toLowerCase().includes(q);
+          const matchType = inv.investmentType?.toLowerCase().includes(q);
+          const matchNotes = inv.notes?.toLowerCase().includes(q);
+          return matchName || matchPlatform || matchType || matchNotes;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'value') return b.currentValue - a.currentValue;
+        if (sortBy === 'returns') {
+          const retA = a.investedAmount > 0 ? ((a.currentValue - a.investedAmount) / a.investedAmount) * 100 : 0;
+          const retB = b.investedAmount > 0 ? ((b.currentValue - b.investedAmount) / b.investedAmount) * 100 : 0;
+          return retB - retA;
+        }
+        if (sortBy === 'sip') return (b.monthlyContribution || 0) - (a.monthlyContribution || 0);
+        if (sortBy === 'name') return a.investmentName.localeCompare(b.investmentName);
+        return 0;
+      });
+  }, [investments, selectedTab, searchQuery, sortBy]);
+
   const handleCASImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -102,9 +213,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
 
     setIsParsingCas(true);
     
-    // Simulate statement parsing wait
     setTimeout(async () => {
-      // Mocking high-quality extracted mutual funds from CAS PDF/CSV
       const mockExtracted = [
         {
           id: 'cas_inv_1',
@@ -116,7 +225,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
           units: 3240.23,
           startDate: '2023-01-15',
           isLiveTracked: true,
-          schemeCode: '122639' // Parag Parikh Flexi Cap Scheme Code
+          schemeCode: '122639'
         },
         {
           id: 'cas_inv_2',
@@ -128,7 +237,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
           units: 1450.40,
           startDate: '2023-04-10',
           isLiveTracked: true,
-          schemeCode: '125497' // SBI Small Cap Scheme Code
+          schemeCode: '125497'
         },
         {
           id: 'cas_inv_3',
@@ -140,7 +249,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
           units: 2150.10,
           startDate: '2022-11-05',
           isLiveTracked: true,
-          schemeCode: '119062' // Mirae Asset Large Cap Scheme Code
+          schemeCode: '119062'
         }
       ];
 
@@ -163,7 +272,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
           platform: item.platform,
           investedAmount: item.investedAmount,
           currentValue: item.currentValue,
-          monthlyContribution: 5000, // Default SIP guess
+          monthlyContribution: 5000,
           startDate: item.startDate,
           lastUpdated: new Date().toISOString().split('T')[0],
           gainLoss: gain,
@@ -222,7 +331,6 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
     setSipDate((inv.sipDate || '1').toString());
     setStartDate(inv.startDate || new Date().toISOString().split('T')[0]);
     setShowAddForm(true);
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -231,7 +339,6 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
     if (!investmentName || !investedAmount) return;
 
     const invested = Number(investedAmount);
-    // If live tracked, current value starts as 0 (will be updated via sync)
     const current = isLiveTracked ? 0 : Number(currentValue);
 
     if (isNaN(invested) || invested <= 0) {
@@ -249,12 +356,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
     }
 
     try {
-      const invId = editingInvestmentId;
       let currentValForCalc = current;
-      
-      // If we are editing a live tracked one and units changed, we might not have the live price immediately. 
-      // But we just save the units, the sync will fix the current value later. 
-      // For now, if editing and it's live tracked, we keep the previous current value for the calculation just so it doesn't drop to 0 until sync.
       if (editingInvestmentId && isLiveTracked) {
         const existing = investments.find(i => i.id === editingInvestmentId);
         if (existing) currentValForCalc = existing.currentValue;
@@ -294,7 +396,6 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
 
       resetForm();
       setShowAddForm(false);
-
       onRefreshData();
     } catch (err) {
       console.error(err);
@@ -389,7 +490,6 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
         }
       }
 
-      const invRef = inv.id;
       const updatedInvested = inv.investedAmount + inv.monthlyContribution;
       const gain = updatedCurrent - updatedInvested;
       const returns = updatedInvested > 0 ? (gain / updatedInvested) * 100 : 0;
@@ -419,7 +519,6 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
         await porulalarStore.updateRecord('cards', card.id, { currentOutstanding: increment(inv.monthlyContribution) });
       }
 
-      // Log the SIP payment as an expense
       await porulalarStore.addRecord('expenses', {
         userId,
         date: new Date().toISOString().split('T')[0],
@@ -450,7 +549,6 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
     const newVal = Number(newValStr);
 
     try {
-      const invRef = inv.id;
       const gain = newVal - inv.investedAmount;
       const returns = inv.investedAmount > 0 ? (gain / inv.investedAmount) * 100 : 0;
 
@@ -500,7 +598,6 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
 
         if (livePrice > 0 && inv.units > 0) {
           const newCurrentValue = livePrice * inv.units;
-          // Calculate the updated profit and return percentages
           const gain = newCurrentValue - inv.investedAmount;
           const returns = inv.investedAmount > 0 ? (gain / inv.investedAmount) * 100 : 0;
           
@@ -530,27 +627,24 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
   const getChartData = () => {
     if (!investments || investments.length === 0) return [];
 
-    // Get all unique sorted dates
     const datesSet = new Set<string>();
     investments.forEach((inv) => {
       if (inv.startDate) datesSet.add(inv.startDate);
       if (inv.lastUpdated) datesSet.add(inv.lastUpdated);
     });
 
-    // Also add today's date so the chart is current
     const todayStr = new Date().toISOString().split('T')[0];
     datesSet.add(todayStr);
 
     const sortedDates = Array.from(datesSet).sort();
 
-    // Helper to calculate diff in days
     const getDaysDiff = (d1: string, d2: string) => {
       const time1 = new Date(d1).getTime();
       const time2 = new Date(d2).getTime();
       return Math.max(0, (time2 - time1) / (1000 * 60 * 60 * 24));
     };
 
-    const chartData = sortedDates.map((dateStr) => {
+    return sortedDates.map((dateStr) => {
       let totalInvested = 0;
       let totalCurrent = 0;
 
@@ -559,14 +653,11 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
         const last = inv.lastUpdated || start;
 
         if (dateStr < start) {
-          // Hasn't started yet
           return;
         } else if (dateStr >= last) {
-          // Past last updated
           totalInvested += inv.investedAmount || 0;
           totalCurrent += inv.currentValue || 0;
         } else {
-          // Interpolating between start date and lastUpdated date
           const totalDays = getDaysDiff(start, last);
           const elapsedDays = getDaysDiff(start, dateStr);
           const ratio = totalDays > 0 ? elapsedDays / totalDays : 1;
@@ -587,241 +678,416 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
         'Profit / Loss': Math.round(totalCurrent - totalInvested),
       };
     });
+  };
 
-    return chartData;
+  const getAssetBadgeConfig = (type: string) => {
+    const lower = (type || '').toLowerCase();
+    if (lower.includes('mutual')) {
+      return { icon: PieChart, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100', badge: 'Mutual Fund' };
+    } else if (lower.includes('stock') || lower.includes('equity')) {
+      return { icon: LineChart, color: 'text-sky-600', bg: 'bg-sky-50 border-sky-100', badge: 'Stocks' };
+    } else if (lower.includes('gold') || lower.includes('sgb')) {
+      return { icon: Coins, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100', badge: 'Gold' };
+    } else if (lower.includes('fd') || lower.includes('rd') || lower.includes('ppf') || lower.includes('nps')) {
+      return { icon: Landmark, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', badge: type };
+    } else if (lower.includes('chit')) {
+      return { icon: Layers, color: 'text-rose-600', bg: 'bg-rose-50 border-rose-100', badge: 'Chit Fund' };
+    }
+    return { icon: PiggyBank, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100', badge: type || 'Asset' };
   };
 
   return (
     <div className="space-y-6">
-      {/* Action Row */}
-      <div className="flex justify-end gap-2">
-        <input 
-          type="file" 
-          id="cas-file-input"
-          accept=".pdf,.csv" 
-          className="hidden" 
-          onChange={handleCASImportFile} 
-        />
-        <button
-          onClick={() => document.getElementById('cas-file-input')?.click()}
-          disabled={isParsingCas}
-          className="bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-700 border border-indigo-100 font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
-        >
-          <Upload className={`h-4.5 w-4.5 ${isParsingCas ? 'animate-pulse' : ''}`} />
-          {isParsingCas ? 'Parsing CAS...' : 'Ingest CAS Statement'}
-        </button>
-        <button
-          onClick={fetchLivePrices}
-          disabled={isSyncing}
-          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-        >
-          <RefreshCw className={`h-4.5 w-4.5 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Syncing...' : 'Live Sync'}
-        </button>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-          id="btn-add-investment"
-        >
-          <Plus className="h-4.5 w-4.5" /> Log Investment
-        </button>
+      {/* Top Executive Portfolio KPI Cards Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Portfolio Value */}
+        <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-2xl p-5 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <PiggyBank size={96} />
+          </div>
+          <span className="text-xs font-medium text-indigo-200 uppercase tracking-wider block mb-1">
+            Total Portfolio Value
+          </span>
+          <div className="text-2xl font-black tracking-tight mb-1">
+            ₹{portfolioSummary.totalCurrent.toLocaleString('en-IN')}
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className={`px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+              portfolioSummary.overallReturnPct >= 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+            }`}>
+              {portfolioSummary.overallReturnPct >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              {portfolioSummary.overallReturnPct >= 0 ? '+' : ''}{portfolioSummary.overallReturnPct.toFixed(2)}%
+            </span>
+            <span className="text-indigo-200/80">Overall Return</span>
+          </div>
+        </div>
+
+        {/* Total Capital Invested */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-2xs space-y-2">
+          <div className="flex justify-between items-center text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider">Capital Invested</span>
+            <div className="p-2 bg-slate-50 rounded-xl text-slate-600">
+              <Wallet size={16} />
+            </div>
+          </div>
+          <div className="text-xl font-bold text-slate-800">
+            ₹{portfolioSummary.totalInvested.toLocaleString('en-IN')}
+          </div>
+          <p className="text-xs text-slate-400">
+            Principal across <strong className="text-slate-700 font-semibold">{portfolioSummary.totalAssetsCount}</strong> assets
+          </p>
+        </div>
+
+        {/* Total Net Profit / Loss */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-2xs space-y-2">
+          <div className="flex justify-between items-center text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Net Gain (P&L)</span>
+            <div className={`p-2 rounded-xl ${portfolioSummary.totalProfit >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+              {portfolioSummary.totalProfit >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            </div>
+          </div>
+          <div className={`text-xl font-bold ${portfolioSummary.totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {portfolioSummary.totalProfit >= 0 ? '+' : ''}₹{portfolioSummary.totalProfit.toLocaleString('en-IN')}
+          </div>
+          <p className="text-xs text-slate-400">
+            Unrealized market profit
+          </p>
+        </div>
+
+        {/* Monthly SIP Outflow */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-2xs space-y-2">
+          <div className="flex justify-between items-center text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider">Monthly SIP Flow</span>
+            <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+              <Zap size={16} />
+            </div>
+          </div>
+          <div className="text-xl font-bold text-slate-800">
+            ₹{portfolioSummary.totalMonthlySip.toLocaleString('en-IN')}
+            <span className="text-xs text-slate-400 font-normal">/mo</span>
+          </div>
+          <p className="text-xs text-slate-400">
+            <strong className="text-indigo-600 font-semibold">{portfolioSummary.activeSipCount}</strong> active recurring SIPs
+          </p>
+        </div>
       </div>
 
-      {/* Add Investment Form */}
+      {/* Primary Toolbar: Actions + Search + Sort */}
+      <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-2xs space-y-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Category Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
+            {CATEGORY_TABS.map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = selectedTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setSelectedTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-100'
+                  }`}
+                >
+                  <TabIcon size={14} className={isActive ? 'text-indigo-300' : 'text-slate-400'} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+            <input 
+              type="file" 
+              id="cas-file-input"
+              accept=".pdf,.csv" 
+              className="hidden" 
+              onChange={handleCASImportFile} 
+            />
+            <button
+              onClick={() => document.getElementById('cas-file-input')?.click()}
+              disabled={isParsingCas}
+              className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+              title="Import Mutual Funds from CAS statement PDF"
+            >
+              <Upload className={`h-3.5 w-3.5 text-indigo-600 ${isParsingCas ? 'animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">{isParsingCas ? 'Parsing...' : 'CAS Import'}</span>
+            </button>
+
+            <button
+              onClick={fetchLivePrices}
+              disabled={isSyncing}
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-medium text-xs px-3 py-2 rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+              title="Sync live market prices for Mutual Funds & Stocks"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Live Sync'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (showAddForm) resetForm();
+                setShowAddForm(!showAddForm);
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+              id="btn-add-investment"
+            >
+              <Plus className="h-4 w-4" /> Log Investment
+            </button>
+          </div>
+        </div>
+
+        {/* Secondary Filter & Search Row */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-slate-100">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by fund, broker, scheme..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto text-xs text-slate-500 w-full sm:w-auto justify-between sm:justify-end">
+            <span className="font-semibold text-slate-400 flex items-center gap-1">
+              <ArrowUpDown size={12} /> Sort:
+            </span>
+            <select
+              value={sortBy}
+              onChange={(e: any) => setSortBy(e.target.value)}
+              className="bg-slate-50 border border-slate-200/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-medium outline-hidden focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+            >
+              <option value="value">Highest Portfolio Value</option>
+              <option value="returns">Highest Returns (%)</option>
+              <option value="sip">Highest Monthly SIP</option>
+              <option value="name">Asset Name (A-Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Add / Edit Investment Structured Form */}
       {showAddForm && (
-        <form onSubmit={handleAddInvestment} className="bg-white p-5 border border-slate-100 rounded-2xl shadow-sm space-y-4">
-          <h3 className="font-semibold text-slate-800 text-base flex items-center gap-2">
-            <PiggyBank className="text-indigo-500 h-5 w-5" /> {editingInvestmentId ? 'Edit Investment Asset' : 'Track Investment Asset'}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Asset Type</label>
-              <select
-                value={investmentType}
-                onChange={(e) => setInvestmentType(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-white outline-hidden focus:ring-2 focus:ring-sky-500/20"
-              >
-                {INVESTMENT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="relative">
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Fund / Asset Name</label>
-              <input
-                type="text"
-                required
-                placeholder={investmentType === 'Stocks' ? 'e.g. Reliance, TCS' : 'e.g. Parag Parikh Flexi Cap'}
-                value={investmentName}
-                onChange={(e) => {
-                  setInvestmentName(e.target.value);
-                  if (isLiveTracked) {
-                    if (investmentType === 'Mutual Fund') {
-                      setSchemeCode('');
-                      searchMf(e.target.value);
-                    } else if (investmentType === 'Stocks') {
-                      setTickerSymbol('');
-                      searchStock(e.target.value);
+        <form onSubmit={handleAddInvestment} className="bg-white p-6 border border-indigo-100 rounded-2xl shadow-md space-y-5 animate-fade-in">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+              <Sparkles className="text-indigo-600 h-5 w-5" /> 
+              {editingInvestmentId ? 'Edit Investment Asset' : 'Add New Investment Asset'}
+            </h3>
+            <span className="text-xs text-slate-400">Fill details to log capital or live market tracking</span>
+          </div>
+
+          {/* Section 1: Asset Basics */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">1. Asset Classification & Platform</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Asset Category</label>
+                <select
+                  value={investmentType}
+                  onChange={(e) => setInvestmentType(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  {INVESTMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Fund / Asset Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder={investmentType === 'Stocks' ? 'e.g. Reliance Industries, TCS' : 'e.g. Parag Parikh Flexi Cap Fund'}
+                  value={investmentName}
+                  onChange={(e) => {
+                    setInvestmentName(e.target.value);
+                    if (isLiveTracked) {
+                      if (investmentType === 'Mutual Fund') {
+                        setSchemeCode('');
+                        searchMf(e.target.value);
+                      } else if (investmentType === 'Stocks') {
+                        setTickerSymbol('');
+                        searchStock(e.target.value);
+                      }
                     }
-                  }
-                }}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-white outline-hidden focus:ring-2 focus:ring-sky-500/20"
-              />
-              {isSearchingMf && investmentType === 'Mutual Fund' && <div className="text-xs text-slate-400 mt-1">Searching Funds...</div>}
-              {isSearchingStock && investmentType === 'Stocks' && <div className="text-xs text-slate-400 mt-1">Searching Stocks...</div>}
-              
-              {mfSearchResults.length > 0 && isLiveTracked && investmentType === 'Mutual Fund' && !schemeCode && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                  {mfSearchResults.map((res: any) => (
-                    <div 
-                      key={res.schemeCode}
-                      onClick={() => {
-                        setSchemeCode(res.schemeCode.toString());
-                        setInvestmentName(res.schemeName);
-                        setMfSearchResults([]);
-                      }}
-                      className="px-3 py-2 text-xs hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0"
-                    >
-                      {res.schemeName}
-                    </div>
-                  ))}
-                </div>
-              )}
+                  }}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                />
+                {isSearchingMf && investmentType === 'Mutual Fund' && <div className="text-[11px] text-slate-400 mt-1">Searching Scheme Codes...</div>}
+                {isSearchingStock && investmentType === 'Stocks' && <div className="text-[11px] text-slate-400 mt-1">Searching Stock Tickers...</div>}
+                
+                {mfSearchResults.length > 0 && isLiveTracked && investmentType === 'Mutual Fund' && !schemeCode && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                    {mfSearchResults.map((res: any) => (
+                      <div 
+                        key={res.schemeCode}
+                        onClick={() => {
+                          setSchemeCode(res.schemeCode.toString());
+                          setInvestmentName(res.schemeName);
+                          setMfSearchResults([]);
+                        }}
+                        className="px-3 py-2 text-xs hover:bg-indigo-50 cursor-pointer border-b border-slate-100 last:border-0"
+                      >
+                        {res.schemeName}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {stockSearchResults.length > 0 && isLiveTracked && investmentType === 'Stocks' && !tickerSymbol && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                  {stockSearchResults.map((res: any) => (
-                    <div 
-                      key={res.symbol}
-                      onClick={() => {
-                        setTickerSymbol(res.symbol);
-                        setInvestmentName(`${res.longname || res.shortname || res.symbol}`);
-                        setStockSearchResults([]);
-                      }}
-                      className="px-3 py-2 text-xs hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0 flex justify-between items-center"
-                    >
-                      <span className="truncate">{res.longname || res.shortname || res.symbol}</span>
-                      <span className="text-indigo-600 font-mono font-bold bg-indigo-50 px-1 rounded-sm text-[10px] ml-2 shrink-0">{res.symbol}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                {stockSearchResults.length > 0 && isLiveTracked && investmentType === 'Stocks' && !tickerSymbol && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                    {stockSearchResults.map((res: any) => (
+                      <div 
+                        key={res.symbol}
+                        onClick={() => {
+                          setTickerSymbol(res.symbol);
+                          setInvestmentName(`${res.longname || res.shortname || res.symbol}`);
+                          setStockSearchResults([]);
+                        }}
+                        className="px-3 py-2 text-xs hover:bg-indigo-50 cursor-pointer border-b border-slate-100 last:border-0 flex justify-between items-center"
+                      >
+                        <span className="truncate">{res.longname || res.shortname || res.symbol}</span>
+                        <span className="text-indigo-600 font-mono font-bold bg-indigo-50 px-1.5 py-0.5 rounded-sm text-[10px] ml-2 shrink-0">{res.symbol}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {schemeCode && isLiveTracked && investmentType === 'Mutual Fund' && <div className="text-xs text-emerald-600 mt-1 font-semibold">Matched Scheme Code: {schemeCode}</div>}
-              {tickerSymbol && isLiveTracked && investmentType === 'Stocks' && <div className="text-xs text-emerald-600 mt-1 font-semibold">Matched Ticker: {tickerSymbol}</div>}
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Platform / Broker</label>
-              <input
-                type="text"
-                placeholder="e.g. Zerodha Coin, Groww"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-white outline-hidden focus:ring-2 focus:ring-sky-500/20"
-              />
+                {schemeCode && isLiveTracked && investmentType === 'Mutual Fund' && <div className="text-[11px] text-emerald-600 mt-1 font-semibold">Matched Scheme Code: {schemeCode}</div>}
+                {tickerSymbol && isLiveTracked && investmentType === 'Stocks' && <div className="text-[11px] text-emerald-600 mt-1 font-semibold">Matched Ticker: {tickerSymbol}</div>}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Broker / Platform</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Zerodha Coin, Groww, INDmoney"
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Invested Amount (₹)</label>
-              <input
-                type="number"
-                required
-                placeholder="e.g. 50000"
-                value={investedAmount}
-                onChange={(e) => setInvestedAmount(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-white outline-hidden focus:ring-2 focus:ring-sky-500/20"
-              />
+          {/* Section 2: Capital & Live Tracking */}
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">2. Deployed Capital & Live Market Sync</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Total Invested Amount (₹) *</label>
+                <input
+                  type="number"
+                  required
+                  placeholder="e.g. 150000"
+                  value={investedAmount}
+                  onChange={(e) => setInvestedAmount(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              {!isLiveTracked && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Current Valuation (₹) *</label>
+                  <input
+                    type="number"
+                    required={!isLiveTracked}
+                    placeholder="e.g. 185000"
+                    value={currentValue}
+                    onChange={(e) => setCurrentValue(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Investment Start Date</label>
+                <input
+                  type="date"
+                  required
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
             </div>
-            <div className="col-span-full bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-3">
+
+            {/* Live Tracking Checkbox */}
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 space-y-3 mt-2">
               <div className="flex items-center gap-2">
                 <input 
                   type="checkbox" 
                   id="isLiveTracked"
                   checked={isLiveTracked} 
                   onChange={(e) => setIsLiveTracked(e.target.checked)} 
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
                 />
-                <label htmlFor="isLiveTracked" className="text-sm font-semibold text-slate-700 cursor-pointer">
-                  Enable Live Market Tracking?
+                <label htmlFor="isLiveTracked" className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1.5">
+                  Enable Live Market Price Tracking?
+                  <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md font-semibold uppercase">Auto NAV</span>
                 </label>
               </div>
               
               {isLiveTracked && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-indigo-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-indigo-200 pt-1">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Number of Units / Shares</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Number of Units / Shares *</label>
                     <input
                       type="number"
                       step="0.001"
-                      placeholder="e.g. 150.5"
+                      placeholder="e.g. 1450.25"
                       value={units}
                       onChange={(e) => setUnits(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-50 outline-hidden focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-slate-50 outline-hidden focus:ring-2 focus:ring-indigo-500/20"
                     />
                   </div>
-                  {investmentType === 'Mutual Fund' && (
-                    <div>
-                      <div className="text-xs text-slate-400 mt-7 italic">
-                        Start typing your Fund Name above to search for the Live Scheme Code automatically!
-                      </div>
-                    </div>
-                  )}
-                  {investmentType === 'Stocks' && (
-                    <div>
-                      <div className="text-xs text-slate-400 mt-7 italic">
-                        Start typing your Stock Name above to search for the Live Ticker Symbol automatically!
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-[11px] text-slate-500 flex items-center italic">
+                    Type your Mutual Fund or Stock name above to bind scheme code or ticker symbol automatically.
+                  </div>
                 </div>
               )}
             </div>
+          </div>
 
-            {!isLiveTracked && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Current Value (₹)</label>
-                <input
-                  type="number"
-                  required={!isLiveTracked}
-                  placeholder="e.g. 58000"
-                  value={currentValue}
-                  onChange={(e) => setCurrentValue(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-white outline-hidden focus:ring-2 focus:ring-sky-500/20"
-                />
-              </div>
-            )}
-            <div className="col-span-full bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-3">
+          {/* Section 3: SIP & Auto-Pay */}
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-wider">3. SIP Contribution & Auto-Debit Rules</h4>
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 space-y-3">
               <div className="flex items-center gap-2">
                 <input 
                   type="checkbox" 
                   id="isRecurringSip"
                   checked={isRecurringSip} 
                   onChange={(e) => setIsRecurringSip(e.target.checked)} 
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
                 />
-                <label htmlFor="isRecurringSip" className="text-sm font-semibold text-slate-700 cursor-pointer">
-                  Is this a Recurring SIP / Investment?
+                <label htmlFor="isRecurringSip" className="text-xs font-bold text-slate-700 cursor-pointer">
+                  Is this a Monthly Recurring SIP / Deposit?
                 </label>
               </div>
               
               {isRecurringSip && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-indigo-100 mt-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-indigo-200 pt-2">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Monthly SIP Amount (₹)</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">Monthly SIP Amount (₹)</label>
                     <input
                       type="number"
                       placeholder="e.g. 5000"
                       value={monthlyContribution}
                       onChange={(e) => setMonthlyContribution(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-50 outline-hidden focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-slate-50 outline-hidden focus:ring-2 focus:ring-indigo-500/20"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">SIP Deduction Date (1-28)</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">SIP Date of Month (1-28)</label>
                     <input
                       type="number"
                       min="1"
@@ -829,36 +1095,38 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
                       placeholder="e.g. 5"
                       value={sipDate}
                       onChange={(e) => setSipDate(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-slate-50 outline-hidden focus:ring-2 focus:ring-sky-500/20"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-slate-50 outline-hidden focus:ring-2 focus:ring-indigo-500/20"
                     />
                   </div>
-                  <div className="mt-4 pt-4 border-t border-indigo-100 col-span-full">
-                    <div className="flex items-center gap-2 mb-3">
+
+                  <div className="pt-3 border-t border-slate-200 col-span-full">
+                    <div className="flex items-center gap-2 mb-2">
                       <input
                         type="checkbox"
                         id="autoPay"
                         checked={autoPay}
                         onChange={(e) => setAutoPay(e.target.checked)}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
                       />
                       <label htmlFor="autoPay" className="text-xs font-semibold text-slate-700 cursor-pointer">
-                        Enable Auto Pay (auto-deduct on SIP Date)
+                        Enable Auto Pay (Auto-deduct balance on SIP Date)
                       </label>
                     </div>
+
                     {autoPay && (
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Select Payment Source for Auto Debit/Charge</label>
+                      <div className="mt-2">
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">Select Source Bank Account or Credit Card</label>
                         <select
                           value={autoPaySourceId}
                           onChange={(e) => setAutoPaySourceId(e.target.value)}
                           required={autoPay}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-indigo-500/20"
                         >
-                          <option value="">-- Auto Pay Source --</option>
+                          <option value="">-- Choose Payment Source --</option>
                           {banks && banks.length > 0 && (
                             <optgroup label="Bank Accounts">
                               {banks.map(b => (
-                                <option key={b.id} value={b.id}>{b.bankName}</option>
+                                <option key={b.id} value={b.id}>{b.bankName} (₹{b.currentBalance.toLocaleString('en-IN')})</option>
                               ))}
                             </optgroup>
                           )}
@@ -876,71 +1144,76 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
                 </div>
               )}
             </div>
-            
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Start Date</label>
-              <input
-                type="date"
-                required
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-white outline-hidden focus:ring-2 focus:ring-sky-500/20"
-              />
-            </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">Notes</label>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Notes / Financial Target</label>
             <input
               type="text"
-              placeholder="e.g. For daughter's education"
+              placeholder="e.g. Dedicated for daughter's higher education in 2035"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:bg-white outline-hidden focus:ring-2 focus:ring-sky-500/20"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium focus:bg-white outline-hidden focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
-              onClick={resetForm}
-              className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+              onClick={() => {
+                resetForm();
+                setShowAddForm(false);
+              }}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all cursor-pointer shadow-xs"
+              className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all cursor-pointer shadow-xs"
             >
-              {editingInvestmentId ? 'Update Investment' : 'Save Investment'}
+              {editingInvestmentId ? 'Update Investment' : 'Save Investment Asset'}
             </button>
           </div>
         </form>
       )}
 
-      {/* Portfolio Performance Line Chart */}
+      {/* Portfolio Performance Area Chart */}
       {investments.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-2xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="font-bold text-slate-800 text-base">Portfolio Growth Over Time</h3>
-              <p className="text-xs text-slate-400">Chronological trend of total invested capital vs. actual current value</p>
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <LineChart className="h-4 w-4 text-indigo-600" />
+                Portfolio Growth & Net Worth Growth
+              </h3>
+              <p className="text-xs text-slate-400">Cumulative trend comparing total invested principal against current market valuation</p>
             </div>
-            <div className="flex flex-wrap gap-4 text-xs font-semibold">
+            <div className="flex items-center gap-4 text-xs font-semibold">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 bg-indigo-500 rounded-full" />
+                <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />
                 <span className="text-slate-600">Invested Capital</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 bg-emerald-500 rounded-full" />
-                <span className="text-emerald-600">Current Portfolio Value</span>
+                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full" />
+                <span className="text-emerald-600 font-bold">Current Valuation</span>
               </div>
             </div>
           </div>
 
-          <div className="h-64 w-full">
+          <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={getChartData()} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+              <AreaChart data={getChartData()} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorInvested" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -952,7 +1225,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
                 <YAxis
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(val) => `₹${val.toLocaleString('en-IN')}`}
+                  tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
                   tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 500 }}
                   dx={-10}
                 />
@@ -962,176 +1235,220 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
                     backgroundColor: '#ffffff',
                     border: '1px solid #f1f5f9',
                     borderRadius: '12px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)',
                   }}
-                  labelStyle={{ fontWeight: 600, color: '#334155', fontSize: '11px', marginBottom: '4px' }}
-                  itemStyle={{ fontSize: '12px' }}
+                  labelStyle={{ fontWeight: 700, color: '#1e293b', fontSize: '11px', marginBottom: '4px' }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 600 }}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="Invested Value"
                   stroke="#6366f1"
-                  strokeWidth={2.5}
-                  dot={{ r: 4, strokeWidth: 1 }}
-                  activeDot={{ r: 6 }}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorInvested)"
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="Current Value"
                   stroke="#10b981"
-                  strokeWidth={3}
-                  dot={{ r: 4, strokeWidth: 1 }}
-                  activeDot={{ r: 7 }}
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorCurrent)"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
-      {/* Investment List Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {investments.length === 0 ? (
-          <div className="col-span-full bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-400 italic">
-            No tracked investments. Add mutual funds, stocks, or gold to track gains and build net worth.
+      {/* Filtered Investment Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredInvestments.length === 0 ? (
+          <div className="col-span-full bg-white rounded-2xl border border-slate-100 p-10 text-center space-y-2">
+            <PiggyBank className="h-10 w-10 text-slate-300 mx-auto" />
+            <h4 className="font-bold text-slate-700 text-sm">No investment assets found</h4>
+            <p className="text-xs text-slate-400">
+              {searchQuery ? 'No investments match your search query.' : 'Log mutual funds, stocks, or gold to track wealth growth.'}
+            </p>
           </div>
         ) : (
-          investments.map((inv) => {
+          filteredInvestments.map((inv) => {
             const profit = inv.currentValue - inv.investedAmount;
             const returns = inv.investedAmount > 0 ? (profit / inv.investedAmount) * 100 : 0;
             const isPositive = profit >= 0;
+            const badgeConfig = getAssetBadgeConfig(inv.investmentType);
+            const BadgeIcon = badgeConfig.icon;
 
             return (
-              <div key={inv.id} className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col space-y-4 hover:shadow-md transition-all">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wide bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-md">
-                        {inv.investmentType}
-                      </span>
+              <div 
+                key={inv.id} 
+                className="bg-white rounded-2xl border border-slate-100 shadow-2xs p-5 flex flex-col justify-between space-y-4 hover:shadow-md hover:border-slate-200 transition-all duration-200 relative group"
+              >
+                {/* Header: Badge & Asset Title */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-8 h-8 rounded-xl ${badgeConfig.bg} ${badgeConfig.color} border flex items-center justify-center shrink-0`}>
+                        <BadgeIcon size={16} />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                          {badgeConfig.badge}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-600 block">
+                          {inv.platform || 'Direct'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
                       {inv.isLiveTracked && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                          <span className="relative flex h-2 w-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                           </span>
                           Live
                         </span>
                       )}
+                      
+                      <div className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        isPositive 
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80' 
+                          : 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                      }`}>
+                        {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                        <span>{isPositive ? '+' : ''}{returns.toFixed(2)}%</span>
+                      </div>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-800 truncate max-w-[180px]" title={inv.investmentName}>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 leading-snug break-words" title={inv.investmentName}>
                       {inv.investmentName}
                     </h3>
-                    <p className="text-[11px] text-slate-400">Platform: <span className="text-slate-600 font-medium">{inv.platform}</span></p>
-                  </div>
-
-                  <div className="flex gap-1.5 shrink-0">
-                    <button
-                      onClick={() => handleEditInvestment(inv)}
-                      className="p-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all cursor-pointer"
-                      title="Edit investment"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleUpdateCurrentValue(inv)}
-                      className="p-1 text-slate-500 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 rounded-lg border border-slate-100 transition-all cursor-pointer"
-                      title="Update Market Value"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </button>
-                    {inv.monthlyContribution > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <select
-                          value={paySourceIds[inv.id] || ''}
-                          onChange={e => setPaySourceIds(prev => ({ ...prev, [inv.id]: e.target.value }))}
-                          className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-[10px] outline-hidden focus:ring-1 focus:ring-indigo-500 max-w-[100px]"
-                        >
-                          <option value="">-- Source --</option>
-                          {banks && banks.length > 0 && (
-                            <optgroup label="Banks">
-                              {banks.map(b => <option key={b.id} value={b.id}>{b.bankName}</option>)}
-                            </optgroup>
-                          )}
-                          {cards && cards.length > 0 && (
-                            <optgroup label="Cards">
-                              {cards.filter(c => c.cardType === 'Credit').map(c => <option key={c.id} value={c.id}>{c.cardName}</option>)}
-                            </optgroup>
-                          )}
-                        </select>
-                        <button
-                          onClick={() => handleRecordSIP(inv)}
-                          className="px-2 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-100 transition-all cursor-pointer"
-                          title="Record SIP contribution"
-                        >
-                          SIP
-                        </button>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => handleDeleteInvestment(inv.id)}
-                      className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-all cursor-pointer"
-                      title="Delete investment"
-                    >
-                      <Trash className="h-3.5 w-3.5" />
-                    </button>
                   </div>
                 </div>
 
-                {/* Return Percentage Badges */}
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400">Yield & XIRR</span>
-                  <div className="flex items-center gap-2">
-                    {xirrValues[inv.id] !== undefined && (
-                      <span className="text-indigo-600 font-black bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md text-[10px] font-mono">
-                        XIRR: {xirrValues[inv.id].toFixed(2)}%
-                      </span>
-                    )}
-                    <div className={`flex items-center gap-0.5 font-bold ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                      <span>{returns.toFixed(2)}% ({isPositive ? '+' : ''}₹{profit.toLocaleString('en-IN')})</span>
+                {/* Numbers Box */}
+                <div className="bg-slate-50/70 rounded-xl p-3 border border-slate-100 space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider block mb-0.5">Invested</span>
+                      <span className="text-xs font-bold text-slate-700 font-mono">₹{inv.investedAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="border-l border-slate-200/60 pl-2.5">
+                      <span className="text-[10px] font-semibold uppercase text-slate-400 tracking-wider block mb-0.5">Current Value</span>
+                      <span className="text-xs font-bold text-slate-900 font-mono">₹{inv.currentValue.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
-                </div>
 
-                {/* Numbers Grid */}
-                <div className="grid grid-cols-2 gap-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100 font-mono text-xs">
-                  <div>
-                    <span className="text-slate-400 block mb-0.5 text-[10px]">Invested Amount</span>
-                    <span className="font-bold text-slate-700 text-xs">₹{inv.investedAmount.toLocaleString('en-IN')}</span>
+                  {/* Profit & XIRR Row */}
+                  <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-500">Net Profit / Loss:</span>
+                    <span className={`font-bold font-mono ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {isPositive ? '+' : ''}₹{profit.toLocaleString('en-IN')}
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 block mb-0.5 text-[10px]">Current Balance</span>
-                    <span className="font-bold text-slate-900 text-xs block">₹{inv.currentValue.toLocaleString('en-IN')}</span>
-                    <span className="text-[9px] text-indigo-600 italic font-semibold">{numberToWords(inv.currentValue)}</span>
-                  </div>
+
+                  {xirrValues[inv.id] !== undefined && (
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 pt-0.5">
+                      <span>Annualized XIRR Return:</span>
+                      <span className="font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md font-mono">
+                        {xirrValues[inv.id].toFixed(2)}%
+                      </span>
+                    </div>
+                  )}
+
                   {inv.isLiveTracked && inv.units && inv.units > 0 && (
-                    <div className="col-span-2 border-t border-slate-100 pt-2 mt-1 grid grid-cols-2 gap-3">
+                    <div className="pt-1.5 border-t border-slate-200/60 grid grid-cols-2 gap-2 text-[10px]">
                       <div>
-                        <span className="text-slate-400 block mb-0.5 text-[10px]">Holdings (Qty)</span>
-                        <span className="font-bold text-indigo-600 text-xs">{inv.units.toFixed(3)} Units</span>
+                        <span className="text-slate-400 block">Units / Holdings:</span>
+                        <span className="font-semibold text-slate-700 font-mono">{inv.units.toFixed(3)}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block mb-0.5 text-[10px]">Live Market Price</span>
-                        <span className="font-bold text-emerald-600 text-xs">₹{(inv.currentValue / inv.units).toFixed(2)}</span>
+                        <span className="text-slate-400 block">Live Price / Unit:</span>
+                        <span className="font-semibold text-emerald-600 font-mono">₹{(inv.currentValue / inv.units).toFixed(2)}</span>
                       </div>
                     </div>
                   )}
+
                   {inv.isRecurringSip && inv.monthlyContribution > 0 && (
-                    <div className="col-span-2 border-t border-slate-100 pt-1.5 mt-0.5 flex justify-between text-[11px]">
-                      <span className="text-slate-400 font-sans">
-                        Recurring SIP ({inv.sipDate ? `Day ${inv.sipDate}` : 'Monthly'}):
+                    <div className="pt-1.5 border-t border-slate-200/60 flex justify-between items-center text-[10px]">
+                      <span className="text-slate-500 flex items-center gap-1 font-semibold">
+                        <Zap size={10} className="text-indigo-600" /> SIP ({inv.sipDate ? `Day ${inv.sipDate}` : 'Monthly'}):
                       </span>
-                      <span className="font-bold text-emerald-600 font-mono">₹{inv.monthlyContribution.toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-indigo-600 font-mono">₹{inv.monthlyContribution.toLocaleString('en-IN')}</span>
                     </div>
                   )}
                 </div>
 
                 {inv.notes && (
-                  <p className="text-[10px] text-slate-400 italic bg-slate-50 p-1.5 rounded-lg border border-slate-100 truncate">
+                  <p className="text-[10px] text-slate-400 italic bg-slate-50/50 p-2 rounded-lg border border-slate-100 truncate" title={inv.notes}>
                     Notes: {inv.notes}
                   </p>
                 )}
+
+                {/* Footer Action Toolbar */}
+                <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  {inv.monthlyContribution > 0 ? (
+                    <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
+                      <select
+                        value={paySourceIds[inv.id] || ''}
+                        onChange={e => setPaySourceIds(prev => ({ ...prev, [inv.id]: e.target.value }))}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-[10px] text-slate-700 outline-hidden focus:ring-1 focus:ring-indigo-500 flex-1 min-w-0 truncate"
+                      >
+                        <option value="">-- Source --</option>
+                        {banks && banks.length > 0 && (
+                          <optgroup label="Banks">
+                            {banks.map(b => <option key={b.id} value={b.id}>{b.bankName}</option>)}
+                          </optgroup>
+                        )}
+                        {cards && cards.length > 0 && (
+                          <optgroup label="Cards">
+                            {cards.filter(c => c.cardType === 'Credit').map(c => <option key={c.id} value={c.id}>{c.cardName}</option>)}
+                          </optgroup>
+                        )}
+                      </select>
+                      <button
+                        onClick={() => handleRecordSIP(inv)}
+                        className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-all cursor-pointer shrink-0 flex items-center gap-1"
+                        title="Record manual SIP payment installment"
+                      >
+                        <Plus size={10} /> SIP
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-slate-400">One-time Capital</span>
+                  )}
+
+                  <div className="flex items-center gap-1 ml-auto">
+                    <button
+                      onClick={() => handleUpdateCurrentValue(inv)}
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer"
+                      title="Update Market Valuation"
+                    >
+                      <RefreshCw size={14} />
+                    </button>
+
+                    <button
+                      onClick={() => handleEditInvestment(inv)}
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all cursor-pointer"
+                      title="Edit Investment Details"
+                    >
+                      <Pencil size={14} />
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteInvestment(inv.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                      title="Delete Investment Asset"
+                    >
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
             );
           })
@@ -1140,7 +1457,7 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
 
       {/* CAS Ingest Modal */}
       {showCasModal && (
-        <div className="fixed inset-0 bg-slate-900/25 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border border-slate-100 space-y-6 text-left">
             <div>
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
@@ -1173,15 +1490,15 @@ export default function InvestmentsPanel({ userId, investments, banks, cards, on
                   setShowCasModal(false);
                   setParsedInvestments([]);
                 }}
-                className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel Import
               </button>
               <button
                 onClick={handleSaveCasInvestments}
-                className="px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
               >
-                <CheckCircle className="h-4.5 w-4.5 text-white" /> Save Imported Mutual Funds
+                <CheckCircle className="h-4 w-4 text-white" /> Save Imported Mutual Funds
               </button>
             </div>
           </div>
