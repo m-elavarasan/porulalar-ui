@@ -14,9 +14,7 @@ interface SettingsPanelProps {
 
 export default function SettingsPanel({ userId, allData, onRefreshData }: SettingsPanelProps) {
   const { showAlert, showConfirm } = useDialog();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const serverFileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isWiping, setIsWiping] = useState(false);
   const [googleLinked, setGoogleLinked] = useState(false);
   const [checkingGoogle, setCheckingGoogle] = useState(true);
@@ -38,18 +36,28 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
     setIsServerExporting(true);
     try {
       const token = localStorage.getItem('porulalar_access_token');
-      const url = `${API_BASE}/api/data/export?password=${encodeURIComponent(backupPassword)}&token=${token}`;
-      
+      const res = await fetch(`${API_BASE}/api/data/export?password=${encodeURIComponent(backupPassword)}&token=${token}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson?.error?.message || 'Failed to export server backup');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
       const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", url);
-      downloadAnchorNode.setAttribute("download", `porulalar_encrypted_backup.enc`);
+      downloadAnchorNode.href = url;
+      downloadAnchorNode.download = `porulalar_encrypted_backup_${new Date().toISOString().split('T')[0]}.enc`;
       document.body.appendChild(downloadAnchorNode);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
-      
+      window.URL.revokeObjectURL(url);
+
       showAlert('Server-side encrypted backup downloaded successfully.', 'Backup Completed', 'success');
-    } catch (e) {
-      showAlert('Failed to generate server backup.', 'Error', 'error');
+    } catch (e: any) {
+      showAlert(e.message || 'Failed to generate server backup.', 'Error', 'error');
     } finally {
       setIsServerExporting(false);
     }
@@ -166,112 +174,6 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
     } finally {
       setIsWiping(false);
     }
-  };
-
-  const handleExport = () => {
-    try {
-      const exportData = {
-        version: "1.0",
-        exportDate: new Date().toISOString(),
-        userId: userId,
-        data: allData
-      };
-      
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `wealth_manager_backup_${new Date().toISOString().split('T')[0]}.json`);
-      document.body.appendChild(downloadAnchorNode); // required for firefox
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-      
-      showAlert('Data successfully exported to your device.', 'Export Complete', 'success');
-    } catch (err) {
-      console.error(err);
-      showAlert('Failed to export data.', 'Export Error', 'error');
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Reset input
-    e.target.value = '';
-
-    const confirmed = await showConfirm(
-      'WARNING: Uploading a backup will merge and overwrite existing data with the same IDs. It is recommended to only do this on empty accounts or full restores. Are you sure you want to proceed?'
-    );
-    if (!confirmed) return;
-
-    setIsUploading(true);
-    const reader = new FileReader();
-    
-    reader.onload = async (event) => {
-      try {
-        const jsonStr = event.target?.result as string;
-        const parsed = JSON.parse(jsonStr);
-
-        if (!parsed.data || typeof parsed.data !== 'object') {
-          throw new Error("Invalid backup file format.");
-        }
-
-        const dataObj = parsed.data;
-        let successCount = 0;
-
-        // Helper function to restore a collection
-        const restoreCollection = async (collectionName: string, items: any[]) => {
-          if (!Array.isArray(items)) return;
-          for (const item of items) {
-            if (item.id) {
-              await porulalarStore.addRecord(collectionName, item);
-              successCount++;
-            }
-          }
-        };
-
-        await restoreCollection('expenses', dataObj.expenses);
-        await restoreCollection('income', dataObj.income);
-        await restoreCollection('loans', dataObj.loans);
-        await restoreCollection('emis', dataObj.emis);
-        await restoreCollection('chits', dataObj.chits);
-        await restoreCollection('investments', dataObj.investments);
-        await restoreCollection('assets', dataObj.assets);
-        await restoreCollection('goals', dataObj.goals);
-        await restoreCollection('budgets', dataObj.budgets);
-        await restoreCollection('recurringTransactions', dataObj.recurringTransactions);
-        await restoreCollection('netWorthSnapshots', dataObj.netWorthSnapshots);
-        await restoreCollection('borrows', dataObj.borrows);
-        await restoreCollection('banks', dataObj.banks);
-        await restoreCollection('cards', dataObj.cards);
-        await restoreCollection('customCategories', dataObj.customCategories);
-
-        if (dataObj.userSettings && dataObj.userSettings.id) {
-          // Skip local user settings restore
-          successCount++;
-        }
-
-        await showAlert(`Successfully restored ${successCount} records!`, 'Import Complete', 'success');
-        if (onRefreshData) onRefreshData();
-
-      } catch (err: any) {
-        console.error(err);
-        await showAlert('Failed to import data. Please ensure the JSON file is valid.', 'Import Error', 'error');
-      } finally {
-        setIsUploading(false);
-      }
-    };
-
-    reader.onerror = () => {
-      setIsUploading(false);
-      showAlert('Failed to read the file.', 'File Error', 'error');
-    };
-
-    reader.readAsText(file);
   };
 
   return (
