@@ -28,6 +28,7 @@ import { InvestmentCard } from '../../components/InvestmentCard';
 import { MetricCard } from '../../components/MetricCard';
 import { QuickActionModal } from '../../components/QuickActionModal';
 import { CashFlowEnginePanel } from '../../components/CashFlowEnginePanel';
+import { OneClickPayment } from '../../components/OneClickPayment';
 import { v2Service, DecisionEngineResponse } from '../../services/v2Service';
 
 export default function DashboardPage() {
@@ -249,6 +250,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── ONE CLICK UPCOMING PAYMENTS TIMELINE ── */}
+      <OneClickPayment />
 
       {/* ── CASH FLOW OPERATING SYSTEM ENGINE ── */}
       <CashFlowEnginePanel />
