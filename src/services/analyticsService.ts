@@ -16,5 +16,9 @@ export const analyticsService = {
 
   estimateTax: async (payload: { grossIncome: number; deductions80C: number; deductions80D: number; otherDeductions: number }): Promise<any> => {
     return apiClient.post('/api/analytics/tax-estimator', payload);
+  },
+
+  getFinancialHealth: async (): Promise<any> => {
+    return apiClient.get('/api/analytics/financial-health');
   }
 };

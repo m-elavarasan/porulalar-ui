@@ -29,6 +29,8 @@ import { MetricCard } from '../../components/MetricCard';
 import { QuickActionModal } from '../../components/QuickActionModal';
 import { CashFlowEnginePanel } from '../../components/CashFlowEnginePanel';
 import { OneClickPayment } from '../../components/OneClickPayment';
+import { FinancialHealthCard } from '../../components/FinancialHealthCard';
+import { BudgetAlertsBanner } from '../../components/BudgetAlertsBanner';
 import { v2Service, DecisionEngineResponse } from '../../services/v2Service';
 
 import AdminPage from '../admin/AdminPage';
@@ -186,6 +188,9 @@ export default function DashboardPage() {
 
       {/* ── DESKTOP DASHBOARD EXPERIENCE (Visible on tablet & desktop) ── */}
       <div className="hidden md:block space-y-6">
+        <BudgetAlertsBanner />
+        <FinancialHealthCard />
+
         {/* Top Hero Summary Card V2 */}
         <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-7 rounded-3xl shadow-xl relative overflow-hidden space-y-6 border border-slate-800">
           <div className="absolute -top-12 -right-12 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />

@@ -4,7 +4,8 @@ import { useAuth } from '../../App';
 import { debounce } from '../../lib/utils';
 import ExpensePanel from '../../components/ExpensePanel';
 import { HubHeader } from '../../components/HubHeader';
-import { Receipt, ArrowDownLeft, Handshake } from 'lucide-react';
+import { StatementUploadModal } from '../../components/StatementUploadModal';
+import { Receipt, ArrowDownLeft, Handshake, Upload } from 'lucide-react';
 
 const CASH_FLOW_TABS = [
   { id: 'expenses', label: 'Expenses & Budgets', route: '/expenses', icon: Receipt },
@@ -20,6 +21,7 @@ export default function ExpensesPage() {
   const [banks, setBanks] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
 
   const [page, setPage] = useState(1);
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -95,12 +97,24 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <HubHeader
-        title="Cash Flow Management"
-        subtitle="Track income, daily expenses, category budgets, and borrow/lend transactions."
-        tabs={CASH_FLOW_TABS}
-        icon={Receipt}
-      />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex-1">
+          <HubHeader
+            title="Cash Flow Management"
+            subtitle="Track income, daily expenses, category budgets, and borrow/lend transactions."
+            tabs={CASH_FLOW_TABS}
+            icon={Receipt}
+          />
+        </div>
+        <button
+          onClick={() => setIsStatementModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-lg transition-all"
+        >
+          <Upload className="w-4 h-4" />
+          Import Statement
+        </button>
+      </div>
+
       <ExpensePanel
         userId={user.uid}
         expenses={expenses}
@@ -121,6 +135,12 @@ export default function ExpensesPage() {
         setStartDateFilter={setStartDateFilter}
         endDateFilter={endDateFilter}
         setEndDateFilter={setEndDateFilter}
+      />
+
+      <StatementUploadModal
+        isOpen={isStatementModalOpen}
+        onClose={() => setIsStatementModalOpen(false)}
+        onImportComplete={fetchExpensesData}
       />
     </div>
   );
