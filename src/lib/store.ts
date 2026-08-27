@@ -42,6 +42,13 @@ class PorulalarStore {
     if (!force && this.isBootstrapped) return;
     if (this.bootstrapPromise) return this.bootstrapPromise;
 
+    // Mark collections as loading to prevent individual concurrent fetches
+    Object.keys(COLLECTION_MAP).forEach((coll) => {
+      if (this.status[coll] !== 'loaded') {
+        this.status[coll] = 'loading';
+      }
+    });
+
     this.bootstrapPromise = (async () => {
       try {
         const res = await apiClient.get<Record<string, any[]>>('/api/bootstrap');
@@ -61,6 +68,11 @@ class PorulalarStore {
         }
       } catch (err) {
         console.error('Failed to bootstrap store:', err);
+        Object.keys(COLLECTION_MAP).forEach((coll) => {
+          if (this.status[coll] === 'loading') {
+            this.status[coll] = 'idle';
+          }
+        });
       } finally {
         this.bootstrapPromise = null;
       }
@@ -75,7 +87,7 @@ class PorulalarStore {
     }
     this.listeners[collectionName].add(callback);
     
-    // Trigger initial callback if loaded, otherwise fetch
+    // Trigger initial callback if loaded, otherwise fetch (which will await bootstrap if active)
     if (this.status[collectionName] === 'loaded' && this.cache[collectionName]) {
       callback(this.cache[collectionName]);
     } else {
@@ -101,6 +113,13 @@ class PorulalarStore {
     const now = Date.now();
     if (!forceRefresh && this.status[collectionName] === 'loaded' && (now - (this.lastFetched[collectionName] || 0) < this.CACHE_TTL_MS)) {
       return this.cache[collectionName];
+    }
+
+    if (!forceRefresh && this.bootstrapPromise) {
+      await this.bootstrapPromise;
+      if (this.status[collectionName] === 'loaded') {
+        return this.cache[collectionName] || [];
+      }
     }
 
     if (this.status[collectionName] === 'loading' && this.activePromises[collectionName]) {

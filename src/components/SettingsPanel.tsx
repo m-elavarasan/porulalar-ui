@@ -108,6 +108,27 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
     }
   };
 
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedHumanData = async () => {
+    const confirmed = await showConfirm(
+      'This will replace old synthetic test data with realistic human financial records (salary, D-Mart groceries, TNEB utilities, Swiggy, Amazon orders, mutual fund SIPs, credit cards, EMIs, and chits). Proceed?'
+    );
+    if (!confirmed) return;
+
+    setIsSeeding(true);
+    try {
+      await dataService.seedHumanData();
+      await porulalarStore.bootstrap(true);
+      await showAlert('Successfully seeded realistic human financial records!', 'Seed Complete', 'success');
+      if (onRefreshData) onRefreshData();
+    } catch (e: any) {
+      await showAlert(e.message || 'Failed to seed human data.', 'Seed Error', 'error');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   const checkGoogleStatus = async () => {
     try {
       const data = await googleService.getStatus();
@@ -426,6 +447,13 @@ export default function SettingsPanel({ userId, allData, onRefreshData }: Settin
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+              <button
+                onClick={handleSeedHumanData}
+                disabled={isSeeding}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:shadow-lg disabled:opacity-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> {isSeeding ? 'Seeding Data...' : 'Seed Real Human Entry'}
+              </button>
               <button
                 onClick={handleWipeData}
                 disabled={isWiping}

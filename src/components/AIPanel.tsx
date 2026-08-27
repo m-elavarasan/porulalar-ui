@@ -18,31 +18,31 @@ interface Message {
 }
 
 interface AIPanelProps {
-  userId: string;
-  accessToken: string | null;
-  onRefreshData: () => void;
-  expenses: any[];
-  income: any[];
-  loans: any[];
-  chits: any[];
-  investments: any[];
-  assets: any[];
-  goals: any[];
-  budgets: any[];
+  userId?: string;
+  accessToken?: string | null;
+  onRefreshData?: () => void;
+  expenses?: any[];
+  income?: any[];
+  loans?: any[];
+  chits?: any[];
+  investments?: any[];
+  assets?: any[];
+  goals?: any[];
+  budgets?: any[];
 }
 
 export default function AIPanel({
-  userId,
-  accessToken,
-  onRefreshData,
-  expenses,
-  income,
-  loans,
-  chits,
-  investments,
-  assets,
-  goals,
-  budgets,
+  userId = 'default',
+  accessToken = null,
+  onRefreshData = () => {},
+  expenses = [],
+  income = [],
+  loans = [],
+  chits = [],
+  investments = [],
+  assets = [],
+  goals = [],
+  budgets = [],
 }: AIPanelProps) {
   const { showAlert } = useDialog();
   const [messages, setMessages] = useState<Message[]>([

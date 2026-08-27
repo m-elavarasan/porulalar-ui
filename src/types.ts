@@ -341,3 +341,328 @@ export interface SIPGrowthResult {
   futureValue: number;
   wealthMultiplier: number;
 }
+
+// ---------- PERSONAL CFO 2.0 TYPES ----------
+
+export interface NetWorthTrajectoryPoint {
+  year: string;
+  label: string;
+  actual: number;
+  base: number;
+  defensive: number;
+  aggressive: number;
+  isProjected: boolean;
+}
+
+export interface PersonalROCEBreakdown {
+  financialCapitalPct: number;
+  ventureCapitalPct: number;
+  physicalAssetsPct: number;
+  overallPortfolioPct: number;
+}
+
+export interface AssetCommandItem {
+  id: string;
+  assetName: string;
+  assetType: string;
+  category: string;
+  capitalDeployed: number;
+  currentValue: number;
+  returnPct: number;
+  roce: number;
+  cashYield: number;
+  irr: number;
+  paybackPeriodMonths: number;
+  riskLevel: string;
+  liquidityLevel: string;
+}
+
+export interface CapitalAllocationItem {
+  class: string;
+  currentPct: number;
+  targetPct: number;
+  deviationPct: number;
+  amount: number;
+}
+
+export interface IdleCapitalAnalysis {
+  totalCash: number;
+  requiredLiquidityReserve: number;
+  expected90DayObligations: number;
+  deployableIdleCapital: number;
+  recommendedStrategies: string[];
+}
+
+export interface RollingCashflowMonth {
+  month: string;
+  openingCash: number;
+  income: number;
+  assetYield: number;
+  debtService: number;
+  investments: number;
+  capex: number;
+  closingCash: number;
+}
+
+export interface LiquidityCommand {
+  availableCash: number;
+  requiredReserve: number;
+  deployableCapital: number;
+  next90DayObligations: number;
+  next12MonthNeed: number;
+  liquidityCoveragePct: number;
+  liquidityWarningMessage?: string;
+}
+
+export interface TaxPositionSummary {
+  estimatedIncome: number;
+  estimatedTax: number;
+  effectiveRate: number;
+  projectedLiability: number;
+  regime: string;
+  optimizationStrategies: string[];
+}
+
+export interface CFOInsightItem {
+  id: string;
+  type: 'RISK' | 'OPPORTUNITY' | 'DECISION' | 'ACHIEVEMENT';
+  title: string;
+  observation: string;
+  why: string;
+  impact: string;
+  recommendation: string;
+  confidence: number;
+}
+
+export interface CFOOverviewResponse {
+  updatedMinutesAgo: number;
+  netWorth: number;
+  netWorthYtdChange: number;
+  netWorthYtdChangePct: number;
+  netWorthCagr: number;
+  portfolioRoce: number;
+  investedCapital: number;
+  liquidCapital: number;
+  totalDebt: number;
+  trajectoryChart: NetWorthTrajectoryPoint[];
+  personalRoce: PersonalROCEBreakdown;
+  assetCommandMatrix: AssetCommandItem[];
+  capitalAllocation: CapitalAllocationItem[];
+  idleCapital: IdleCapitalAnalysis;
+  liquidity: LiquidityCommand;
+  rollingCashflow: RollingCashflowMonth[];
+  taxPosition: TaxPositionSummary;
+  insights: CFOInsightItem[];
+}
+
+export interface ScenarioInputVariables {
+  initialCapital: number;
+  revenueGrowth: number;
+  operatingMargin: number;
+  investmentReturn: number;
+  inflation: number;
+  horizonYears: number;
+}
+
+export interface ScenarioOutputResult {
+  baseNetWorth: number;
+  scenarioNetWorth: number;
+  deltaNetWorth: number;
+  roce: number;
+  irr: number;
+  npv: number;
+  annualCashflow: number;
+  liquidityImpact: number;
+}
+
+export interface CFOAdviceItem {
+  id: string;
+  category: 'DEBT_REDUCTION' | 'CHIT_OPTIMIZATION' | 'CREDIT_HEALTH' | 'INVESTMENT_GROWTH' | 'CASH_FLOW' | string;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  title: string;
+  actionSummary: string;
+  explainableReason: string;
+  impactAmount: number;
+  impactMetric: string;
+  scoreGain?: number;
+  confidenceScore?: number;
+  actionRoute?: string;
+  steps?: string[];
+}
+
+export interface CFOSummaryResponse {
+  netWorth: number;
+  netWorthYtdChange: number;
+  monthlyIncome: number;
+  monthlyCommitments: number;
+  freeCash: number;
+  position: {
+    cash: number;
+    investments: number;
+    assets: number;
+    loans: number;
+    creditCard: number;
+    netWorth: number;
+  };
+  upcoming: Array<{
+    type: string;
+    name: string;
+    amount: number;
+    dueDate: string;
+  }>;
+  advice: CFOAdviceItem[];
+}
+
+export interface ChitSimRequest {
+  chitValue: number;
+  durationMonths: number;
+  monthlyContribution: number;
+  auctionDiscount: number;
+  commissionPct: number;
+  foremanCharges: number;
+  auctionMonth: number;
+}
+
+export interface ChitCashflowMonth {
+  month: number;
+  contributionPaid: number;
+  dividendReceived: number;
+  netMonthlyOutflow: number;
+  prizeReceived: number;
+  cumOutflow: number;
+}
+
+export interface ChitSimResult {
+  totalContributions: number;
+  amountReceived: number;
+  discountCost: number;
+  foremanCommission: number;
+  totalForemanCharges: number;
+  netFinancialBenefit: number;
+  effectiveAnnualCost: number;
+  cashflowSchedule: ChitCashflowMonth[];
+  cfoRecommendation: string;
+}
+
+export interface ChitCompareItem {
+  chitName: string;
+  chitValue: number;
+  durationMonths: number;
+  monthlyContribution: number;
+  auctionDiscount: number;
+  auctionMonth: number;
+  result: ChitSimResult;
+  bestFor: string;
+  isRecommended: boolean;
+}
+
+export interface ChitCompareResult {
+  comparedChits: ChitCompareItem[];
+  bestChitForLoan: string;
+  bestChitForSaving: string;
+  cfoAnalysis: string;
+}
+
+export interface ChitLoanStrategyRequest {
+  loanOutstanding: number;
+  loanInterestRate: number;
+  loanRemainingMonths: number;
+  loanEmi: number;
+  chitValue: number;
+  chitDurationMonths: number;
+  chitMonthlyPay: number;
+  chitAuctionDiscount: number;
+  chitAuctionMonth: number;
+  currentEmergencyCash: number;
+}
+
+export interface ChitLoanStrategyResult {
+  scenarioA: {
+    remainingInterest: number;
+    totalOutflow: number;
+    monthlyEmi: number;
+  };
+  scenarioB: {
+    prizePayout: number;
+    chitTotalCost: number;
+    loanPrepaymentAmount: number;
+    loanInterestSaved: number;
+    remainingLoanBalance: number;
+    newLoanEmi: number;
+    netMonthlyCashflow: number;
+    netFinancialBenefit: number;
+  };
+  recommendation: string;
+  isBetterOption: boolean;
+  riskAssessment: string;
+}
+
+export interface LandSimRequest {
+  purchasePrice: number;
+  registrationCosts: number;
+  holdingPeriodYears: number;
+  expectedAppreciationPct: number;
+  annualRentalIncome: number;
+  annualMaintenance: number;
+}
+
+export interface LandSimResult {
+  totalCapitalInvested: number;
+  projectedFutureValue: number;
+  totalNetRentalIncome: number;
+  capitalGain: number;
+  totalProfit: number;
+  cagr: number;
+  cashYieldPct: number;
+  compareVsEquity: {
+    equityFutureValue: number;
+    equityDifference: number;
+    verdict: string;
+  };
+}
+
+export interface AffordabilityRequest {
+  itemName: string;
+  purchaseCost: number;
+  downPayment: number;
+  newMonthlyEmi: number;
+  tenureMonths: number;
+  monthlyIncome: number;
+  existingCommitments: number;
+  essentialLiving: number;
+  currentLiquidCash: number;
+  emergencyBufferMonths: number;
+}
+
+export interface AffordabilityResult {
+  affordabilityStatus: 'YES' | 'NO' | 'BORDERLINE';
+  availableSurplus: number;
+  postPurchaseSurplus: number;
+  postPurchaseCash: number;
+  requiredBuffer: number;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  debtToIncomeRatio: number;
+  rationale: string;
+  keyWarnings: string[];
+}
+
+export interface DecisionOption {
+  id: string;
+  optionName: string;
+  actionType: string;
+  estimatedBenefit: number;
+  netWorth5Y: number;
+  monthlyCashImpact: number;
+  liquidityImpact: string;
+  riskLevel: string;
+  isRecommended: boolean;
+  cfoJustification: string;
+}
+
+export interface MultiOptionCompareResult {
+  bestOptionId: string;
+  bestOptionName: string;
+  options: DecisionOption[];
+  executiveBrief: string;
+}
+

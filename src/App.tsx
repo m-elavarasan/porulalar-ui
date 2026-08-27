@@ -38,7 +38,11 @@ import {
   CreditCard,
   Handshake,
   Eye,
-  EyeOff
+  EyeOff,
+  Zap,
+  Scale,
+  Database,
+  Calculator
 } from 'lucide-react';
 import { useDialog } from './components/DialogProvider';
 
@@ -69,7 +73,17 @@ import {
   RecurringPage,
   AIPage,
   SettingsPage,
-  AdminPage
+  AdminPage,
+  CommandCenterPage,
+  WealthPage,
+  CapitalPage,
+  ForecastPage,
+  TaxPage,
+  IntelligencePage,
+  DataPage,
+  MoneyPage,
+  CentralSimulatorPage,
+  AdvicePage
 } from './pages';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { FinancialSimulatorsPanel } from './components/FinancialSimulatorsPanel';
@@ -374,17 +388,27 @@ export default function App() {
           <Route path="/" element={<AppLayout handleLogout={handleLogout} />}>
             <Route index element={<IndexRoute />} />
             <Route path="dashboard" element={<DashboardRoute />} />
+            <Route path="money" element={<MoneyPage />} />
+            <Route path="loans" element={<LoansPage />} />
+            <Route path="chits" element={<ChitsPage />} />
+            <Route path="investments" element={<InvestmentsPage />} />
+            <Route path="assets" element={<AssetsGoalsPage />} />
+            <Route path="simulator" element={<CentralSimulatorPage />} />
+            <Route path="advice" element={<AdvicePage />} />
+            <Route path="wealth" element={<WealthPage />} />
+            <Route path="capital" element={<CapitalPage />} />
+            <Route path="forecast" element={<ForecastPage />} />
+            <Route path="tax" element={<TaxPage />} />
+            <Route path="intelligence" element={<IntelligencePage />} />
+            <Route path="data" element={<DataPage />} />
             <Route path="expenses" element={<ExpensesPage />} />
             <Route path="income" element={<IncomePage />} />
             <Route path="borrows" element={<BorrowsPage />} />
             <Route path="banks" element={<BanksPage />} />
             <Route path="cards" element={<CardsPage />} />
-            <Route path="loans" element={<LoansPage />} />
             <Route path="emis" element={<EMIsPage />} />
-            <Route path="chits" element={<ChitsPage />} />
-            <Route path="investments" element={<InvestmentsPage />} />
             <Route path="goals" element={<AssetsGoalsPage />} />
-            <Route path="simulators" element={<FinancialSimulatorsPanel />} />
+            <Route path="simulators" element={<CentralSimulatorPage />} />
             <Route path="ai-advisor" element={<AIPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="admin" element={<AdminPage />} />
@@ -686,8 +710,8 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
         </div>
       )}
 
-      {/* Primary Header */}
-      {isAdminUser ? (
+      {/* Primary Header - Hidden on /admin route because AdminPanel has its own integrated sidebar & header */}
+      {(location.pathname.startsWith('/admin') || window.location.hash.includes('admin')) ? null : isAdminUser ? (
         <header className="bg-slate-900 border-b border-slate-800 shadow-md sticky top-0 z-45 transition-all text-white select-none">
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -953,30 +977,32 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
           <div className="border-t border-slate-100 bg-slate-50/80 px-4 md:px-6 py-2 overflow-x-auto scrollbar-none">
             <div className="max-w-7xl mx-auto flex items-center gap-2">
               {(() => {
-                type TabDef = { id: string; label: string; icon: any };
+                type TabDef = { id: string; label: string; route: string; icon: any };
                 const hubs: TabDef[] = [
-                  { id: 'dashboard', label: 'Overview', icon: Grid },
-                  { id: 'cashflow', label: 'Cash Flow', icon: Receipt },
-                  { id: 'accounts', label: 'Accounts & Credit', icon: Building2 },
-                  { id: 'obligations', label: 'Obligations & Chits', icon: Percent },
-                  { id: 'portfolio', label: 'Portfolio & Assets', icon: PiggyBank },
-                  { id: 'system', label: 'AI Supervisor', icon: Sparkles }
+                  { id: 'home', label: 'HOME', route: '/dashboard', icon: Sparkles },
+                  { id: 'money', label: 'MONEY', route: '/money', icon: Wallet },
+                  { id: 'loans', label: 'LOANS', route: '/loans', icon: Briefcase },
+                  { id: 'chits', label: 'CHITS', route: '/chits', icon: Percent },
+                  { id: 'investments', label: 'INVESTMENTS', route: '/investments', icon: TrendingUp },
+                  { id: 'assets', label: 'ASSETS', route: '/assets', icon: Building2 },
+                  { id: 'simulator', label: 'SIMULATOR', route: '/simulator', icon: Calculator },
+                  { id: 'advice', label: 'ADVICE', route: '/advice', icon: Award }
                 ];
 
                 return hubs.map((tab) => {
                   const IconComp = tab.icon;
-                  const isActive = activeTab === tab.id;
+                  const isActive = location.pathname === tab.route || (tab.route !== '/dashboard' && location.pathname.startsWith(tab.route));
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => handleTabClick(tab.id)}
+                      onClick={() => navigate(tab.route)}
                       className={`flex items-center gap-2 px-4 py-2 text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                         isActive
-                          ? 'bg-blue-600 text-white font-extrabold shadow-sm'
+                          ? 'bg-slate-900 text-white font-extrabold shadow-sm'
                           : 'bg-white text-slate-700 hover:bg-slate-200/70 border border-slate-200/60 font-semibold'
                       }`}
                     >
-                      <IconComp className="h-4 w-4 shrink-0" />
+                      <IconComp className={`h-4 w-4 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
                       <span>{tab.label}</span>
                     </button>
                   );
@@ -987,8 +1013,8 @@ function AppLayout({ handleLogout }: { handleLogout: () => void }) {
         </header>
       )}
 
-      {/* Main Layout view wrapper - 100% Width */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6">
+      {/* Main Layout view wrapper - 100% Full-Screen Edge-to-Edge on Admin Route */}
+      <div className={(location.pathname.startsWith('/admin') || window.location.hash.includes('admin')) ? "flex-1 w-full min-h-screen p-0" : "flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6"}>
         <main className="w-full">
           {isAdminUser ? <AdminPage /> : <Outlet />}
         </main>

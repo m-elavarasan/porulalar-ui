@@ -1,32 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@700&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&family=Syne:wght@700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-sans: "Outfit", "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-crowz: "Space Grotesk", "Courier Prime", "Syne", sans-serif;
   --font-mono: "SF Mono", "JetBrains Mono", monospace;
-  --color-primary-600: #2563EB;
+  --color-primary-600: #3B82F6;
   --color-primary-700: #1D4ED8;
-  --color-success-600: #16A34A;
+  --color-success-600: #10B981;
   --color-warning-500: #F59E0B;
-  --color-danger-600: #DC2626;
-  --color-bg-base: #FAFBFD;
+  --color-danger-600: #EF4444;
+  --color-bg-base: #F8FAFC;
   --color-card-bg: #FFFFFF;
 }
 
-/* Force light color scheme — prevents browser dark mode from auto-darkening */
+.font-crowz-header {
+  font-family: var(--font-crowz), "Courier Prime", serif, sans-serif;
+  letter-spacing: -0.02em;
+}
+
 :root {
   color-scheme: light;
 }
 
-/* Modern Calm Light SaaS Background with Soft Mint/Aqua Gradients */
+/* Luxury Ambient Mesh Background */
 body {
   font-family: var(--font-sans);
-  background-color: #FAFBFD;
-  background-image: 
-    radial-gradient(at 10% 10%, rgba(154, 236, 219, 0.18) 0px, transparent 50%),
-    radial-gradient(at 90% 15%, rgba(123, 237, 159, 0.15) 0px, transparent 50%),
-    radial-gradient(at 50% 85%, rgba(129, 236, 236, 0.12) 0px, transparent 50%),
-    radial-gradient(at 85% 80%, rgba(85, 239, 196, 0.15) 0px, transparent 50%);
+  background-color: #F8FAFC;
+  background-image:
+    radial-gradient(at 15% 15%, rgba(99, 102, 241, 0.08) 0px, transparent 55%),
+    radial-gradient(at 85% 10%, rgba(59, 130, 246, 0.06) 0px, transparent 55%),
+    radial-gradient(at 50% 85%, rgba(16, 185, 129, 0.06) 0px, transparent 55%),
+    radial-gradient(at 80% 80%, rgba(168, 85, 247, 0.06) 0px, transparent 55%);
   background-attachment: fixed;
   color: #0F172A;
   -webkit-font-smoothing: antialiased;
@@ -38,104 +43,114 @@ body {
 
 /* Auth page – full-screen polished gradient background */
 #auth-page {
-  background-color: #f8fafc !important;
+  background-color: #0F172A !important;
   background-image:
-    radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.12) 0px, transparent 55%),
-    radial-gradient(at 80% 20%, rgba(59, 130, 246, 0.10) 0px, transparent 55%),
-    radial-gradient(at 50% 80%, rgba(129, 236, 236, 0.10) 0px, transparent 55%) !important;
+    radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.25) 0px, transparent 55%),
+    radial-gradient(at 80% 20%, rgba(59, 130, 246, 0.20) 0px, transparent 55%),
+    radial-gradient(at 50% 80%, rgba(16, 185, 129, 0.18) 0px, transparent 55%) !important;
   background-attachment: fixed;
 }
 
-/* Accessibility Font Scale Utility */
-body.font-scale-large {
-  font-size: 112.5%;
+/* Smooth Bento Micro-interactions */
+.bento-hover {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-body.font-scale-xlarge {
-  font-size: 125%;
+.bento-hover:hover {
+  transform: translateY(-3px) scale(1.008);
+  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
 }
 
-/* Disable all movement, scale, tilt animations on mouse hover */
-*:hover {
-  transform: none !important;
-}
-
-/* Micro-interactions & Smooth Transitions (Color/Border/Shadow only) */
 .transition-saas {
   transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.hover-elevate {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.hover-elevate:hover {
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 /* Modern SaaS Card Design System */
 .saas-card {
   background-color: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 24px;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .saas-card-lg {
   background-color: #FFFFFF;
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 28px;
   box-shadow: 0 8px 30px -4px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 24px;
 }
 
 .glass-card-dark {
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 24px;
   color: #FFFFFF;
 }
 
-.gradient-mesh-indigo {
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+/* ── CURATED BENTO CARDS DESIGN TOKENS ── */
+.bento-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 28px;
+  box-shadow: 0 4px 24px -2px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.gradient-mesh-emerald {
-  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+.bento-card:hover {
+  box-shadow: 0 12px 36px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
 }
 
-.gradient-mesh-amber {
-  background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
+.bento-card-dark {
+  background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  color: #FFFFFF;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.25);
 }
 
-/* Soft Accent Highlight Cards */
-.mint-accent-card {
-  background: linear-gradient(135deg, rgba(154, 236, 219, 0.15) 0%, rgba(255, 255, 255, 1) 100%);
-  border: 1px solid rgba(154, 236, 219, 0.4);
+.bento-card-purple {
+  background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%);
+  border: 1px solid #E9D5FF;
+  border-radius: 28px;
+  color: #581C87;
 }
 
-.aqua-accent-card {
-  background: linear-gradient(135deg, rgba(123, 237, 159, 0.12) 0%, rgba(255, 255, 255, 1) 100%);
-  border: 1px solid rgba(123, 237, 159, 0.35);
+.bento-card-yellow {
+  background: linear-gradient(135deg, #FEFCE8 0%, #FEF9C3 100%);
+  border: 1px solid #FEF08A;
+  border-radius: 28px;
+  color: #713F12;
 }
 
-.teal-accent-card {
-  background: linear-gradient(135deg, rgba(129, 236, 236, 0.12) 0%, rgba(255, 255, 255, 1) 100%);
-  border: 1px solid rgba(129, 236, 236, 0.35);
+.bento-card-pink {
+  background: linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%);
+  border: 1px solid #FBCFE8;
+  border-radius: 28px;
+  color: #831843;
 }
 
-/* Modern SaaS Form Inputs */
-input, select, textarea {
+.bento-card-teal {
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+  border: 1px solid #BBF7D0;
+  border-radius: 28px;
+  color: #14532D;
+}
+
+/* Modern Form Inputs */
+input,
+select,
+textarea {
   background-color: #FFFFFF;
   border: 1px solid #E2E8F0;
   color: #0F172A;
@@ -144,9 +159,11 @@ input, select, textarea {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input:focus, select:focus, textarea:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   outline: none;
 }
 
@@ -167,31 +184,4 @@ input:focus, select:focus, textarea:focus {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
-}
-
-/* 3D Card Flip Perspective Utility */
-.perspective-1000 {
-  perspective: 1000px;
-}
-
-.transform-style-3d {
-  transform-style: preserve-3d;
-}
-
-.backface-hidden {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.rotate-y-180 {
-  transform: rotateY(180deg) !important;
-}
-
-/* Active tab indicator animation */
-.tab-active-indicator {
-  position: absolute;
-  bottom: -1px;
-  height: 2px;
-  background-color: #2563EB;
-  transition: all 0.2s ease;
 }

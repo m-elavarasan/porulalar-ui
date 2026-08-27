@@ -7,5 +7,9 @@ export const dataService = {
 
   purgeUserData: async (): Promise<any> => {
     return apiClient.delete('/api/data/purge');
+  },
+
+  seedHumanData: async (): Promise<any> => {
+    return apiClient.post('/api/seed/human-data', {});
   }
 };

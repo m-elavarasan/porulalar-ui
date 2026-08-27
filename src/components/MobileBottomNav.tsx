@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Receipt, Plus, CreditCard, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { Home, Wallet, Calculator, Award, Plus, ShieldCheck, LogOut } from 'lucide-react';
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -47,21 +47,21 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           onClick={() => onSelectTab('dashboard')}
           className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all cursor-pointer ${
-            activeTab === 'dashboard' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
+            activeTab === 'dashboard' || activeTab === 'home' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
           }`}
         >
           <Home className="h-5 w-5" />
-          <span className="text-[10px]">Overview</span>
+          <span className="text-[10px]">Home</span>
         </button>
 
         <button
-          onClick={() => onSelectTab('expenses')}
+          onClick={() => onSelectTab('money')}
           className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all cursor-pointer ${
-            activeTab === 'expenses' || activeTab === 'income' || activeTab === 'borrows' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
+            activeTab === 'money' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
           }`}
         >
-          <Receipt className="h-5 w-5" />
-          <span className="text-[10px]">Cash Flow</span>
+          <Wallet className="h-5 w-5" />
+          <span className="text-[10px]">Money</span>
         </button>
 
         {onOpenQuickAdd && (
@@ -75,25 +75,26 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         )}
 
         <button
-          onClick={() => onSelectTab('cards')}
+          onClick={() => onSelectTab('simulator')}
           className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all cursor-pointer ${
-            activeTab === 'cards' || activeTab === 'banks' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
+            activeTab === 'simulator' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
           }`}
         >
-          <CreditCard className="h-5 w-5" />
-          <span className="text-[10px]">Cards</span>
+          <Calculator className="h-5 w-5" />
+          <span className="text-[10px]">Simulator</span>
         </button>
 
         <button
-          onClick={() => onSelectTab('settings')}
+          onClick={() => onSelectTab('advice')}
           className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-2xl transition-all cursor-pointer ${
-            activeTab === 'settings' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
+            activeTab === 'advice' ? 'text-blue-400 bg-blue-500/20 font-bold' : 'text-slate-400 hover:text-white font-medium'
           }`}
         >
-          <Settings className="h-5 w-5" />
-          <span className="text-[10px]">Settings</span>
+          <Award className="h-5 w-5" />
+          <span className="text-[10px]">Advice</span>
         </button>
       </div>
     </div>
   );
 };
+

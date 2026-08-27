@@ -45,11 +45,10 @@ export const HubHeader: React.FC<HubHeaderProps> = ({ title, subtitle, tabs, ico
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.route)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${isActive
                     ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60 font-extrabold'
                     : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'
-                }`}
+                  }`}
               >
                 {TabIcon && <TabIcon size={14} className={isActive ? 'text-blue-600' : 'text-slate-400'} />}
                 <span>{tab.label}</span>

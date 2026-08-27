@@ -14,3 +14,16 @@ export { default as AssetsGoalsPage } from './portfolio/AssetsGoalsPage';
 export { default as AIPage } from './system/AIPage';
 export { default as SettingsPage } from './system/SettingsPage';
 export { default as SimulatorsPage } from './simulators/SimulatorsPage';
+
+export { CommandCenterPage } from './CommandCenterPage';
+export { WealthPage } from './WealthPage';
+export { CapitalPage } from './CapitalPage';
+export { ForecastPage } from './ForecastPage';
+export { TaxPage } from './TaxPage';
+export { IntelligencePage } from './IntelligencePage';
+export { DataPage } from './DataPage';
+export { MoneyPage } from './finance/MoneyPage';
+export { AdvicePage } from './finance/AdvicePage';
+export { CentralSimulatorPage } from './simulators/CentralSimulatorPage';
+
+
