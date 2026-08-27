@@ -4,7 +4,13 @@ import {
   DecisionRecommendation,
   ChitLoanComparisonResult,
   LoanPrepaymentResult,
-  SIPGrowthResult
+  SIPGrowthResult,
+  WealthOverviewData,
+  Recommendation,
+  GoalProjectionSummary,
+  DebtVsInvestResult,
+  PurchaseAffordabilityResult,
+  IncomeChangeResult
 } from '../types';
 
 export interface DecisionEngineResponse {
@@ -19,16 +25,62 @@ export interface ChitIntelligenceResponse {
 }
 
 export const v2Service = {
-  getCashFlowSummary: async (): Promise<MonthlyCashFlowSummary> => {
-    return apiClient.get<MonthlyCashFlowSummary>('/api/cashflow/summary');
+  // ─── Unified Wealth Decision Engine Endpoints ──────────────────────────────
+  getWealthOverview: async (): Promise<WealthOverviewData> => {
+    return apiClient.get<WealthOverviewData>('/api/wealth/overview');
   },
 
-  getDecisionEngineRecommendations: async (): Promise<DecisionEngineResponse> => {
-    return apiClient.get<DecisionEngineResponse>('/api/analytics/decision-engine');
+  getRecommendations: async (): Promise<Recommendation[]> => {
+    return apiClient.get<Recommendation[]>('/api/wealth/recommendations');
   },
 
-  getChitIntelligence: async (chitId: string): Promise<ChitIntelligenceResponse> => {
-    return apiClient.get<ChitIntelligenceResponse>(`/api/chits/${chitId}/intelligence`);
+  updateRecommendationStatus: async (id: string, status: string): Promise<any> => {
+    return apiClient.put(`/api/wealth/recommendations/${id}/status`, { status });
+  },
+
+  getGoalProjections: async (): Promise<GoalProjectionSummary> => {
+    return apiClient.get<GoalProjectionSummary>('/api/wealth/goals/projection');
+  },
+
+  // ─── Interactive Multi-Scenario Decision Simulators ────────────────────────
+  runDebtVsInvestSimulator: async (payload: {
+    surplusAmount: number;
+    loanInterestRate: number;
+    loanPrincipalLeft: number;
+    remainingTenureYears: number;
+    expectedReturnRate?: number;
+  }): Promise<DebtVsInvestResult> => {
+    return apiClient.post<DebtVsInvestResult>('/api/simulators/run', {
+      type: 'DEBT_VS_INVEST',
+      debtVsInvest: payload
+    });
+  },
+
+  runPurchaseAffordabilitySimulator: async (payload: {
+    itemName: string;
+    totalCost: number;
+    downPayment: number;
+    proposedTenureMonths: number;
+    estimatedInterestRate: number;
+    currentLiquidCash: number;
+    monthlyFreeCashFlow: number;
+    emergencyBufferReq: number;
+  }): Promise<PurchaseAffordabilityResult> => {
+    return apiClient.post<PurchaseAffordabilityResult>('/api/simulators/run', {
+      type: 'PURCHASE_AFFORDABILITY',
+      purchaseAffordability: payload
+    });
+  },
+
+  runIncomeChangeSimulator: async (payload: {
+    currentMonthlyIncome: number;
+    newMonthlyIncome: number;
+    investAllocationPct: number;
+  }): Promise<IncomeChangeResult> => {
+    return apiClient.post<IncomeChangeResult>('/api/simulators/run', {
+      type: 'INCOME_CHANGE',
+      incomeChange: payload
+    });
   },
 
   runLoanPrepaymentSimulator: async (payload: {
@@ -55,6 +107,19 @@ export const v2Service = {
       type: 'SIP_GROWTH',
       sipGrowth: payload
     });
+  },
+
+  // ─── Legacy & Supporting Endpoints ─────────────────────────────────────────
+  getCashFlowSummary: async (): Promise<MonthlyCashFlowSummary> => {
+    return apiClient.get<MonthlyCashFlowSummary>('/api/cashflow/summary');
+  },
+
+  getDecisionEngineRecommendations: async (): Promise<DecisionEngineResponse> => {
+    return apiClient.get<DecisionEngineResponse>('/api/analytics/decision-engine');
+  },
+
+  getChitIntelligence: async (chitId: string): Promise<ChitIntelligenceResponse> => {
+    return apiClient.get<ChitIntelligenceResponse>(`/api/chits/${chitId}/intelligence`);
   },
 
   onboardGmail: async (payload: {

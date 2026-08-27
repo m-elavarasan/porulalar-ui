@@ -1,16 +1,19 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { porulalarStore } from '../../lib/store';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../App';
-import { debounce } from '../../lib/utils';
-import { dashboardService } from '../../services/dashboardService';
+import { v2Service } from '../../services/v2Service';
+import {
+  WealthOverviewData,
+  Recommendation,
+  FinancialSnapshot,
+  FinancialHealthReport,
+  GoalProjectionSummary
+} from '../../types';
 import {
   PiggyBank,
   Activity,
   Building2,
-  X,
   CreditCard,
   ArrowUpRight,
-  ArrowDownLeft,
   Sparkles,
   TrendingUp,
   ShieldAlert,
@@ -19,20 +22,18 @@ import {
   Landmark,
   ShieldCheck,
   ChevronRight,
-  Bell
+  Scale,
+  Zap,
+  Target,
+  RefreshCw,
+  Send
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { BankCard } from '../../components/BankCard';
-import { CreditCard3D } from '../../components/CreditCard3D';
-import { InvestmentCard } from '../../components/InvestmentCard';
+import { WealthRecommendationsCard } from '../../components/WealthRecommendationsCard';
+import { GoalProjectionCard } from '../../components/GoalProjectionCard';
+import { DecisionEngineCard } from '../../components/DecisionEngineCard';
 import { MetricCard } from '../../components/MetricCard';
 import { QuickActionModal } from '../../components/QuickActionModal';
-import { CashFlowEnginePanel } from '../../components/CashFlowEnginePanel';
-import { OneClickPayment } from '../../components/OneClickPayment';
-import { FinancialHealthCard } from '../../components/FinancialHealthCard';
-import { BudgetAlertsBanner } from '../../components/BudgetAlertsBanner';
-import { v2Service, DecisionEngineResponse } from '../../services/v2Service';
-
 import AdminPage from '../admin/AdminPage';
 
 export default function DashboardPage() {
@@ -46,353 +47,309 @@ export default function DashboardPage() {
     return <AdminPage />;
   }
 
-  const [stats, setStats] = useState<any>(null);
-  const [loans, setLoans] = useState<any[]>([]);
-  const [chits, setChits] = useState<any[]>([]);
-  const [budgets, setBudgets] = useState<any[]>([]);
-  const [banks, setBanks] = useState<any[]>([]);
-  const [cards, setCards] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [investments, setInvestments] = useState<any[]>([]);
-  const [assets, setAssets] = useState<any[]>([]);
+  const [wealthData, setWealthData] = useState<WealthOverviewData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [quickAiInput, setQuickAiInput] = useState('');
+  const [prefillSim, setPrefillSim] = useState<any>(null);
 
-  const isLoadingRef = useRef(false);
-
-  const fetchDashboardData = async () => {
-    if (isLoadingRef.current) return;
-    isLoadingRef.current = true;
+  const fetchOverview = async () => {
     try {
-      await porulalarStore.bootstrap();
-      const data = await dashboardService.getStats();
-      setStats(data);
-
-      setLoans(porulalarStore.getCache('loans'));
-      setChits(porulalarStore.getCache('chits'));
-      setBudgets(porulalarStore.getCache('budgets'));
-      setBanks(porulalarStore.getCache('banks'));
-      setCards(porulalarStore.getCache('cards'));
-      setExpenses(porulalarStore.getCache('expenses'));
-      setInvestments(porulalarStore.getCache('investments'));
-      setAssets(porulalarStore.getCache('assets'));
+      setLoading(true);
+      const data = await v2Service.getWealthOverview();
+      setWealthData(data);
     } catch (err) {
-      console.error('Error loading dashboard data:', err);
+      console.error('Failed to load wealth overview:', err);
     } finally {
-      isLoadingRef.current = false;
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-    const unsubExpenses = porulalarStore.subscribe('expenses', (data) => setExpenses(data));
-    const unsubBanks = porulalarStore.subscribe('banks', (data) => setBanks(data));
-    const unsubCards = porulalarStore.subscribe('cards', (data) => setCards(data));
-    return () => {
-      unsubExpenses();
-      unsubBanks();
-      unsubCards();
-    };
+    fetchOverview();
   }, []);
 
-  const netWorth = stats?.netWorth || 0;
-  const netWorthChangePct = stats?.netWorthChangePct ?? 0;
-  const totalBankBalance = banks.reduce((sum, b) => sum + (b.balance || b.currentBalance || 0), 0);
-  const totalInvestments = investments.reduce((sum, i) => sum + (i.currentValue || i.amount || 0), 0);
-  const totalDebt = loans.reduce((sum, l) => sum + (l.principalOutstanding ?? l.borrowedAmount ?? 0), 0) +
-                    cards.reduce((sum, c) => sum + (c.currentOutstanding || c.balance || 0), 0);
-  
-  const monthlyExpenses = stats?.expenses?.thisMonth || 0;
-  const healthScore = stats?.healthScore || 85;
+  const snapshot: FinancialSnapshot = wealthData?.snapshot || {
+    netWorth: 0,
+    liquidCash: 0,
+    investmentsValue: 0,
+    assetsValue: 0,
+    totalAssets: 0,
+    totalLiabilities: 0,
+    activeLoansTotal: 0,
+    activeCardsOutstanding: 0,
+    activeEmisOutstanding: 0,
+    monthlyIncome: 0,
+    monthlyFixedObligations: 0,
+    monthlyFreeCashFlow: 0,
+    emergencyBufferRequired: 0,
+    emergencyBufferActual: 0,
+    investableCapital: 0,
+    cashRunwayMonths: 0,
+    debtToIncomeRatio: 0,
+    savingsRatePercentage: 0,
+    netWorthGrowthPct: 0
+  };
+
+  const health: FinancialHealthReport = wealthData?.health || {
+    overallScore: 80,
+    overallRating: 'Good',
+    headline: 'Stable Financial Base',
+    summaryDiagnosis: 'Your financial foundation is healthy with active opportunities for wealth acceleration.',
+    dimensions: [],
+    keyRiskCount: 0,
+    keyOppCount: 0
+  };
+
+  const goalsSummary: GoalProjectionSummary = wealthData?.goals || {
+    goals: [],
+    totalTargetAmount: 0,
+    totalCurrentAmount: 0,
+    totalMonthlySip: 0,
+    onTrackCount: 0,
+    atRiskCount: 0,
+    offTrackCount: 0,
+    achievedCount: 0
+  };
+
+  const recommendations: Recommendation[] = wealthData?.recommendations || [];
   const userName = user?.email?.split('@')[0] || 'User';
+
+  const handleSimulate = (rec: Recommendation) => {
+    if (rec.type === 'DEBT_OPTIMIZATION') {
+      setPrefillSim({
+        surplusAmount: rec.impactAmount || 100000,
+        loanInterestRate: 11.5,
+        loanPrincipalLeft: snapshot.activeLoansTotal
+      });
+    }
+    // Scroll smoothly to decision simulator
+    const el = document.getElementById('decision-simulator-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleQuickAiSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickAiInput.trim()) return;
+    navigate(`/ai?q=${encodeURIComponent(quickAiInput)}`);
+  };
 
   const handleSelectQuickAction = (actionType: string) => {
     switch (actionType) {
-      case 'PAY_CC_BILL': navigate('/cards'); break;
-      case 'PAY_EMI': navigate('/emis'); break;
       case 'RECORD_INCOME': navigate('/income'); break;
       case 'ADD_INVESTMENT': navigate('/investments'); break;
+      case 'PAY_CC_BILL': navigate('/cards'); break;
+      case 'PAY_EMI': navigate('/emis'); break;
       case 'TRANSFER_MONEY': navigate('/banks'); break;
       case 'ADD_ASSET': navigate('/assets'); break;
-      case 'ADD_CREDIT_CARD': navigate('/cards'); break;
-      default: navigate('/cards');
+      default: navigate('/investments');
     }
   };
 
   return (
     <div className="space-y-6 pb-24 select-none px-1">
-      {/* ── NATIVE MOBILE APP EXPERIENCE (Visible only on mobile devices) ── */}
-      <div className="block md:hidden space-y-4">
-        {/* Native Compact Greeting & App Header */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              {userName[0]?.toUpperCase() || 'U'}
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-900 text-sm leading-tight">Welcome, {userName} 👋</h2>
-              <span className="text-[10px] text-slate-500 font-medium">Porulalar Wealth App</span>
-            </div>
-          </div>
+      {/* ── 1. WEALTH POSITION HERO HEADER ── */}
+      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl relative overflow-hidden space-y-6 border border-slate-800">
+        <div className="absolute -top-16 -right-16 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <button
-            onClick={() => setIsQuickActionOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs flex items-center gap-1"
-          >
-            <PlusCircle size={14} />
-            <span>Action</span>
-          </button>
-        </div>
-
-        {/* Native Mobile Hero Balance Card */}
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-5 rounded-3xl shadow-xl relative overflow-hidden space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Net Worth</span>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30">
-              Score: {healthScore}/100 Excellent
-            </span>
-          </div>
-
-          <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              ₹{netWorth.toLocaleString('en-IN')}<span className="text-lg text-slate-400 font-semibold">.00</span>
-            </h1>
-            {netWorthChangePct !== 0 && (
-              <span className="text-xs font-semibold text-emerald-400 block mt-1">
-                {netWorthChangePct >= 0 ? '+' : ''}{netWorthChangePct.toFixed(1)}% this month
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 font-medium">
+                Decision Engine Dashboard for <strong className="text-white capitalize font-bold">{userName}</strong>
               </span>
-            )}
-          </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30">
+                Wealth Engine Live
+              </span>
+            </div>
 
-          <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
-            <span>Available Cash: <strong className="text-white">₹{totalBankBalance.toLocaleString('en-IN')}</strong></span>
-            <span>Total Debt: <strong className="text-rose-300">₹{totalDebt.toLocaleString('en-IN')}</strong></span>
-          </div>
-        </div>
+            <div>
+              <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest block">Total Net Worth</span>
+              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mt-1">
+                ₹{snapshot.netWorth.toLocaleString('en-IN')}<span className="text-xl text-slate-400 font-semibold">.00</span>
+              </h1>
+            </div>
 
-        {/* Horizontal Swipeable Bank Accounts Carousel for Native Mobile */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Bank Accounts</span>
-            <button onClick={() => navigate('/banks')} className="text-[11px] font-semibold text-blue-600 font-sans">View All →</button>
-          </div>
-
-          <div className="flex overflow-x-auto gap-3.5 snap-x snap-mandatory scrollbar-none pb-2 pt-1 px-1">
-            {banks.map((b) => (
-              <div key={b.id || b.name} className="min-w-[280px] snap-center">
-                <BankCard bank={b} onTransfer={() => navigate('/banks')} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── DESKTOP DASHBOARD EXPERIENCE (Visible on tablet & desktop) ── */}
-      <div className="hidden md:block space-y-6">
-        <BudgetAlertsBanner />
-        <FinancialHealthCard />
-
-        {/* Top Hero Summary Card V2 */}
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-7 rounded-3xl shadow-xl relative overflow-hidden space-y-6 border border-slate-800">
-          <div className="absolute -top-12 -right-12 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium">
-                  Welcome back, <strong className="text-white capitalize font-bold">{userName}</strong> 👋
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
+              {snapshot.netWorthGrowthPct !== 0 && (
+                <span className={`inline-flex items-center gap-1 font-extrabold px-3 py-1 rounded-xl border ${
+                  snapshot.netWorthGrowthPct >= 0 ? 'text-emerald-300 bg-emerald-500/15 border-emerald-400/30' : 'text-rose-300 bg-rose-500/15 border-rose-400/30'
+                }`}>
+                  <TrendingUp size={14} /> {snapshot.netWorthGrowthPct >= 0 ? '+' : ''}{snapshot.netWorthGrowthPct.toFixed(1)}% Velocity
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30">
-                  Live Portfolio
-                </span>
-              </div>
+              )}
+              <span className="text-slate-300">
+                Investable Surplus: <strong className="text-emerald-400 font-extrabold">₹{snapshot.investableCapital.toLocaleString('en-IN')}</strong>
+              </span>
+              <span className="text-slate-300">
+                Total Debt Drag: <strong className="text-rose-300 font-extrabold">₹{snapshot.totalLiabilities.toLocaleString('en-IN')}</strong>
+              </span>
+              <span className="text-slate-300">
+                Runway: <strong className="text-sky-300 font-extrabold">{snapshot.cashRunwayMonths} Months</strong>
+              </span>
+            </div>
+          </div>
 
+          {/* Health Score Gauge & Action */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 border-t lg:border-t-0 lg:border-l border-white/10 pt-5 lg:pt-0 lg:pl-8">
+            <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-4 backdrop-blur-md">
+              <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    className="text-white/10"
+                    strokeWidth="3.5"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    className={health.overallScore >= 75 ? 'text-emerald-400' : health.overallScore >= 50 ? 'text-amber-400' : 'text-rose-400'}
+                    strokeDasharray={`${health.overallScore}, 100`}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <span className="absolute font-black text-sm text-white">{health.overallScore}</span>
+              </div>
               <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Total Net Worth</span>
-                <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mt-1">
-                  ₹{netWorth.toLocaleString('en-IN')}<span className="text-xl text-slate-400 font-medium">.00</span>
-                </h1>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
-                {netWorthChangePct !== 0 && (
-                  <span className={`inline-flex items-center gap-1 font-bold px-3 py-1 rounded-xl border ${
-                    netWorthChangePct >= 0 ? 'text-emerald-300 bg-emerald-500/15 border-emerald-400/30' : 'text-rose-300 bg-rose-500/15 border-rose-400/30'
-                  }`}>
-                    <TrendingUp size={14} /> {netWorthChangePct >= 0 ? '+' : ''}{netWorthChangePct.toFixed(1)}% this month
-                  </span>
-                )}
-                <span className="text-slate-300 font-medium">
-                  Liquid Cash: <strong className="text-emerald-400 font-extrabold">₹{totalBankBalance.toLocaleString('en-IN')}</strong>
-                </span>
-                <span className="text-slate-300 font-medium">
-                  Total Debt: <strong className="text-rose-300 font-extrabold">₹{totalDebt.toLocaleString('en-IN')}</strong>
-                </span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Financial Health</span>
+                <span className="text-xs font-black text-emerald-300 block">{health.overallRating} Grade</span>
+                <span className="text-[10px] text-slate-400 font-medium">{health.headline}</span>
               </div>
             </div>
 
-            {/* Health Score Gauge & Quick Actions */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 border-t lg:border-t-0 lg:border-l border-white/10 pt-5 lg:pt-0 lg:pl-8">
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-4 backdrop-blur-md">
-                <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-white/10"
-                      strokeWidth="3.5"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-emerald-400"
-                      strokeDasharray={`${healthScore}, 100`}
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <span className="absolute font-black text-sm text-white">{healthScore}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Financial Stability</span>
-                  <span className="text-xs font-black text-emerald-400 block">Top Tier Excellent</span>
-                  <span className="text-[10px] text-slate-400 font-medium">95% optimal cashflow reserve</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsQuickActionOpen(true)}
-                className="px-5 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
-              >
-                <PlusCircle size={18} />
-                <span>Quick Action</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setIsQuickActionOpen(true)}
+              className="px-5 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95"
+            >
+              <PlusCircle size={18} />
+              <span>Quick Action</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── ONE CLICK UPCOMING PAYMENTS TIMELINE ── */}
-      <OneClickPayment />
-
-      {/* ── CASH FLOW OPERATING SYSTEM ENGINE ── */}
-      <CashFlowEnginePanel />
-
-      {/* ── METRICS GRID ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Liquid Cash"
-          value={totalBankBalance}
-          subtitle={`${banks.length} Bank Accounts`}
-          icon={<Building2 size={18} />}
-          onClick={() => navigate('/banks')}
-        />
-        <MetricCard
-          title="Investments"
-          value={totalInvestments}
-          subtitle={`${investments.length} Active Investments`}
-          icon={<Landmark size={18} />}
-          onClick={() => navigate('/investments')}
-        />
-        <MetricCard
-          title="Total Liabilities"
-          value={totalDebt}
-          subtitle={`${loans.length + cards.length} Active Liabilities`}
-          icon={<ShieldAlert size={18} />}
-          onClick={() => navigate('/loans')}
-        />
-        <MetricCard
-          title="Monthly Outflow"
-          value={monthlyExpenses}
-          subtitle="Automated payment ledger"
-          icon={<Activity size={18} />}
-          onClick={() => navigate('/expenses')}
-        />
-      </div>
-
-      {/* ── LINKED BANKS SECTION ── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-            <Building2 size={18} className="text-blue-600" />
-            <span>Bank Accounts & Liquidity</span>
-          </h2>
-          <button onClick={() => navigate('/banks')} className="text-xs font-semibold text-blue-600 hover:underline">
-            Manage ({banks.length}) →
+      {/* ── 2. ASK PORULALAR COPILOT QUERY ENTRY BAR ── */}
+      <div className="saas-card p-3 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center gap-3">
+        <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold shrink-0">
+          <Sparkles size={16} />
+        </div>
+        <form onSubmit={handleQuickAiSubmit} className="flex-1 flex items-center gap-2">
+          <input
+            type="text"
+            value={quickAiInput}
+            onChange={(e) => setQuickAiInput(e.target.value)}
+            placeholder="Ask Porulalar (e.g. 'Should I invest ₹50k or prepay my loan?', 'Why is my wealth growth slow?')..."
+            className="w-full text-xs sm:text-sm font-medium text-slate-900 bg-transparent focus:outline-hidden placeholder:text-slate-400"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+          >
+            <span>Ask</span>
+            <ArrowUpRight size={14} />
           </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {banks.length === 0 ? (
-            <div className="col-span-full saas-card p-6 text-center space-y-2">
-              <p className="text-xs font-semibold text-slate-600">No bank accounts linked yet.</p>
-              <button onClick={() => navigate('/banks')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-saas">
-                Link Bank Account
-              </button>
-            </div>
-          ) : (
-            banks.slice(0, 3).map((b) => (
-              <BankCard key={b.id || b.name} bank={b} onTransfer={() => navigate('/banks')} />
-            ))
-          )}
-        </div>
+        </form>
       </div>
 
-      {/* ── CREDIT CARDS SECTION ── */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-            <CreditCard size={18} className="text-indigo-600" />
-            <span>Credit Cards & Utilization</span>
-          </h2>
-          <button onClick={() => navigate('/cards')} className="text-xs font-semibold text-blue-600 hover:underline">
-            View All ({cards.length}) →
-          </button>
-        </div>
+      {/* ── 3. STRUCTURED WEALTH OPPORTUNITIES & RISKS ── */}
+      <WealthRecommendationsCard
+        recommendations={recommendations}
+        onSimulate={handleSimulate}
+        onRefresh={fetchOverview}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {cards.length === 0 ? (
-            <div className="col-span-full saas-card p-6 text-center space-y-2">
-              <p className="text-xs font-semibold text-slate-600">No credit cards added.</p>
-              <button onClick={() => navigate('/cards')} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-saas">
-                Add Credit Card
-              </button>
-            </div>
-          ) : (
-            cards.slice(0, 3).map((c) => (
-              <CreditCard3D key={c.id || c.name} card={c} onPayBill={() => navigate('/cards')} />
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* ── AI INSIGHTS RECOMMENDATION CARDS ── */}
-      <div className="saas-card p-5 sm:p-6 bg-slate-900 text-white space-y-4">
+      {/* ── 4. MULTI-DIMENSIONAL HEALTH DIAGNOSIS ── */}
+      <div className="saas-card p-6 rounded-3xl bg-white border border-slate-200 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles size={18} className="text-amber-400" />
-            <h3 className="font-bold text-xs sm:text-sm tracking-wide">Porulalar AI Advisor Insights</h3>
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+              <ShieldCheck size={16} />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-extrabold text-slate-900">Financial Health Diagnosis</h2>
+              <span className="text-[11px] text-slate-500 font-medium">{health.summaryDiagnosis}</span>
+            </div>
           </div>
-          <button onClick={() => navigate('/ai')} className="text-xs font-semibold text-amber-300 hover:underline">
-            Open AI Chat →
+          <button onClick={fetchOverview} className="p-2 text-slate-400 hover:text-slate-700 cursor-pointer">
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          <div className="bg-white/10 rounded-2xl p-3.5 border border-white/10 space-y-1">
-            <span className="text-[10px] uppercase font-bold text-amber-300 tracking-wider">Credit Optimization</span>
-            <p className="text-xs font-medium leading-relaxed">Credit utilization on Axis Magnus reached 42%. Pay outstanding before due date to keep your score in top tier.</p>
-          </div>
-          <div className="bg-white/10 rounded-2xl p-3.5 border border-white/10 space-y-1">
-            <span className="text-[10px] uppercase font-bold text-emerald-300 tracking-wider">Wealth Acceleration</span>
-            <p className="text-xs font-medium leading-relaxed">Increase Nifty 50 Index SIP to hit your ₹50L Retirement Goal 1.8 years earlier.</p>
-          </div>
-          <div className="bg-white/10 rounded-2xl p-3.5 border border-white/10 space-y-1">
-            <span className="text-[10px] uppercase font-bold text-sky-300 tracking-wider">Interest Savings</span>
-            <p className="text-xs font-medium leading-relaxed">Prepaying towards Personal Loan will save substantial interest over tenure.</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {health.dimensions.map((dim) => (
+            <div key={dim.name} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-slate-700">{dim.name}</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white border border-slate-200">
+                  {dim.rating}
+                </span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full"
+                  style={{ width: `${dim.score}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug pt-1">
+                {dim.diagnosis}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 5. GOAL TRAJECTORY MATRIX ── */}
+      <GoalProjectionCard summary={goalsSummary} />
+
+      {/* ── 6. INTERACTIVE DECISION SIMULATOR ── */}
+      <div id="decision-simulator-section">
+        <DecisionEngineCard
+          snapshot={snapshot}
+          prefillDebtVsInvest={prefillSim}
+        />
+      </div>
+
+      {/* ── 7. SUPPORTING DATA SOURCES SUMMARY ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">Supporting Data Portfolios</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            title="Liquid Cash"
+            value={snapshot.liquidCash}
+            subtitle="Checking & savings balance"
+            icon={<Building2 size={18} />}
+            onClick={() => navigate('/banks')}
+          />
+          <MetricCard
+            title="Investments"
+            value={snapshot.investmentsValue}
+            subtitle="Mutual Funds, Stocks, SIPs"
+            icon={<Landmark size={18} />}
+            onClick={() => navigate('/investments')}
+          />
+          <MetricCard
+            title="Total Debt"
+            value={snapshot.totalLiabilities}
+            subtitle="Loans, EMIs, & Credit Cards"
+            icon={<ShieldAlert size={18} />}
+            onClick={() => navigate('/loans')}
+          />
+          <MetricCard
+            title="Monthly Obligations"
+            value={snapshot.monthlyFixedObligations}
+            subtitle="Committed monthly burn"
+            icon={<Activity size={18} />}
+            onClick={() => navigate('/expenses')}
+          />
         </div>
       </div>
 

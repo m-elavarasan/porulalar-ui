@@ -49,7 +49,7 @@ export default function AIPanel({
     {
       id: 'welcome',
       sender: 'ai',
-      text: "Hello! I am your Porulalar AI. You can write natural language commands to log transactions, ask about your net worth, request cash flow forecasts, or analyze your spending. Try saying: 'Spent 250 on coffee' or 'Paid EMI 22030'.",
+      text: "Hello! I am Porulalar AI, your Personal Wealth Decision Advisor. I use your mathematically verified financial data to help you evaluate opportunities, project goals, and make smarter money moves. Try asking:\n• Where should my next ₹50,000 go?\n• Should I prepay my loan or invest in mutual funds?\n• Am I on track for my goals?\n• What is my biggest financial risk right now?",
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -62,6 +62,15 @@ export default function AIPanel({
   const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
   const [isParsingManual, setIsParsingManual] = useState(false);
   const [googleLinked, setGoogleLinked] = useState(false);
+
+  // Check URL query parameter if opened via quick entry
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q && q.trim()) {
+      setInputText(q);
+    }
+  }, []);
 
   useEffect(() => {
     const checkStatus = async () => {

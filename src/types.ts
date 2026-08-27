@@ -341,3 +341,127 @@ export interface SIPGrowthResult {
   futureValue: number;
   wealthMultiplier: number;
 }
+
+export interface Recommendation {
+  id: string;
+  userId: string;
+  type: 'DEBT_OPTIMIZATION' | 'IDLE_CASH' | 'GOAL_SHORTFALL' | 'ALLOCATION_RISK' | 'LIQUIDITY_RISK' | 'TAX_EFFICIENCY';
+  title: string;
+  description: string;
+  reason: string;
+  impact: string;
+  impactAmount: number;
+  impactMetric: string;
+  confidence: number; // 0-100
+  urgency: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  estimatedBenefit: number;
+  relatedGoalId?: string;
+  relatedEntityId?: string;
+  suggestedAction: string;
+  actionRoute: string;
+  simulationType?: string;
+  steps?: string[];
+  status: 'NEW' | 'VIEWED' | 'SIMULATED' | 'ACCEPTED' | 'DISMISSED' | 'COMPLETED';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FinancialSnapshot {
+  netWorth: number;
+  liquidCash: number;
+  investmentsValue: number;
+  assetsValue: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  activeLoansTotal: number;
+  activeCardsOutstanding: number;
+  activeEmisOutstanding: number;
+  monthlyIncome: number;
+  monthlyFixedObligations: number;
+  monthlyFreeCashFlow: number;
+  emergencyBufferRequired: number;
+  emergencyBufferActual: number;
+  investableCapital: number;
+  cashRunwayMonths: number;
+  debtToIncomeRatio: number;
+  savingsRatePercentage: number;
+  netWorthGrowthPct: number;
+}
+
+export interface HealthDimension {
+  name: string;
+  score: number;
+  rating: 'Excellent' | 'Good' | 'Fair' | 'At Risk' | 'Critical';
+  diagnosis: string;
+  impactOnScore: string;
+}
+
+export interface FinancialHealthReport {
+  overallScore: number;
+  overallRating: 'Excellent' | 'Good' | 'Fair' | 'Needs Attention' | 'Critical';
+  headline: string;
+  summaryDiagnosis: string;
+  dimensions: HealthDimension[];
+  keyRiskCount: number;
+  keyOppCount: number;
+}
+
+export interface GoalProjectionSummary {
+  goals: Goal[];
+  totalTargetAmount: number;
+  totalCurrentAmount: number;
+  totalMonthlySip: number;
+  onTrackCount: number;
+  atRiskCount: number;
+  offTrackCount: number;
+  achievedCount: number;
+}
+
+export interface WealthOverviewData {
+  snapshot: FinancialSnapshot;
+  health: FinancialHealthReport;
+  goals: GoalProjectionSummary;
+  recommendations: Recommendation[];
+}
+
+export interface DebtVsInvestOption {
+  name: string;
+  description: string;
+  endingWealth: number;
+  interestSaved: number;
+  investmentGains: number;
+  netBenefit: number;
+}
+
+export interface DebtVsInvestResult {
+  loanInterestRate: number;
+  expectedReturnRate: number;
+  surplusAmount: number;
+  timeHorizonYears: number;
+  optionA_Prepay: DebtVsInvestOption;
+  optionB_Invest: DebtVsInvestOption;
+  optionC_Split: DebtVsInvestOption;
+  winnerOption: string;
+  explainableVerdict: string;
+  confidenceScore: number;
+}
+
+export interface PurchaseAffordabilityResult {
+  itemName: string;
+  status: 'AFFORDABLE' | 'STRETCHED' | 'UNSAFE';
+  estimatedMonthlyEmi: number;
+  postPurchaseBuffer: number;
+  postPurchaseCashflow: number;
+  affordabilityScore: number;
+  explainableReason: string;
+  actionSteps: string[];
+}
+
+export interface IncomeChangeResult {
+  monthlyIncrement: number;
+  annualIncrement: number;
+  addedWealth10Yr: number;
+  acceleratedYearsTo50L: number;
+  explainableVerdict: string;
+}
+
